@@ -310,6 +310,16 @@ psa_status_t psa_driver_wrapper_mac_verify_finish(
 psa_status_t psa_driver_wrapper_mac_abort(
     psa_mac_operation_t *operation );
 
+/*
+ * Key agreement functions
+ */
+psa_status_t psa_driver_wrapper_key_agreement(
+        const psa_key_attributes_t *attributes,
+        const uint8_t *priv_key, size_t priv_key_size,
+        const uint8_t *publ_key, size_t peer_key_size,
+        uint8_t *output, size_t output_size, size_t *output_length,
+        psa_algorithm_t alg );
+
 #endif /* PSA_CRYPTO_DRIVER_WRAPPERS_H */
 
 /* End of automatically generated file. */

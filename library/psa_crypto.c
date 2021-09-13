@@ -5398,11 +5398,30 @@ psa_status_t psa_raw_key_agreement( psa_algorithm_t alg,
     if( status != PSA_SUCCESS )
         goto exit;
 
-    status = psa_key_agreement_raw_internal( alg, slot,
-                                             peer_key, peer_key_length,
-                                             output, output_size,
-                                             output_length );
+    psa_key_attributes_t attributes = {
+      .core = slot->attr
+    };
 
+    status = psa_driver_wrapper_key_agreement( &attributes,
+                                               slot->key.data,
+                                               slot->key.bytes,
+                                               peer_key,
+                                               peer_key_length,
+                                               output,
+                                               output_size,
+                                               output_length,
+                                               alg );
+
+    if( status == PSA_ERROR_NOT_SUPPORTED )
+    {
+        status = psa_key_agreement_raw_internal( alg,
+                                                 slot,
+                                                 peer_key,
+                                                 peer_key_length,
+                                                 output,
+                                                 output_size,
+                                                 output_length);
+    }
 exit:
     if( status != PSA_SUCCESS )
     {
