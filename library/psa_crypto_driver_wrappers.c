@@ -1811,4 +1811,50 @@ psa_status_t psa_driver_wrapper_mac_abort(
     }
 }
 
+/*
+ * Key agreement functions
+ */
+psa_status_t psa_driver_wrapper_key_agreement(
+        const psa_key_attributes_t *attributes,
+        const uint8_t *priv_key, size_t priv_key_size,
+        const uint8_t *publ_key, size_t publ_key_size,
+        uint8_t *output, size_t output_size, size_t *output_length,
+        psa_algorithm_t alg )
+{
+    psa_key_location_t location =
+            PSA_KEY_LIFETIME_GET_LOCATION( attributes->core.lifetime );
+
+    switch( location )
+    {
+    case PSA_KEY_LOCATION_LOCAL_STORAGE:
+        /* Key is stored in the slot in export representation, so
+         * cycle through all known transparent accelerators */
+#if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+#if defined(PSA_CRYPTO_DRIVER_CC3XX)
+        return cc3xx_key_agreement( attributes,
+                                    priv_key,
+                                    priv_key_size,
+                                    publ_key,
+                                    publ_key_size,
+                                    output,
+                                    output_size,
+                                    output_length,
+                                    alg );
+#endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
+    default:
+        /* Key is declared with a lifetime not known to us */
+        (void) priv_key;
+        (void) priv_key_size;
+        (void) publ_key;
+        (void) publ_key_size;
+        (void) output;
+        (void) output_size;
+        (void) output_length;
+        (void) alg;
+
+        return( PSA_ERROR_NOT_SUPPORTED );
+    }
+}
+
 #endif /* MBEDTLS_PSA_CRYPTO_C */
