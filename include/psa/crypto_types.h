@@ -40,6 +40,7 @@
  * is defined as well to include all PSA code.
  */
 #if defined(MBEDTLS_PSA_CRYPTO_C)
+#undef MBEDTLS_PSA_CRYPTO_CLIENT
 #define MBEDTLS_PSA_CRYPTO_CLIENT
 #endif /* MBEDTLS_PSA_CRYPTO_C */
 
