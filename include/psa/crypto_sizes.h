@@ -243,6 +243,8 @@
 
 /* The maximum size of an ECC key on this implementation, in bits.
  * This is a vendor-specific macro. */
+#ifndef PSA_VENDOR_ECC_MAX_CURVE_BITS
+
 #if defined(PSA_WANT_ECC_SECP_R1_521)
 #define PSA_VENDOR_ECC_MAX_CURVE_BITS 521u
 #elif defined(PSA_WANT_ECC_BRAINPOOL_P_R1_512)
@@ -271,6 +273,8 @@
 #define PSA_VENDOR_ECC_MAX_CURVE_BITS 192u
 #else
 #define PSA_VENDOR_ECC_MAX_CURVE_BITS 0u
+#endif
+
 #endif
 
 /** This macro returns the maximum supported length of the PSK for the
