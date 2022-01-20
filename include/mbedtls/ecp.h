@@ -309,6 +309,8 @@ mbedtls_ecp_group;
 #include "ecp_alt.h"
 #endif /* MBEDTLS_ECP_ALT */
 
+#ifndef MBEDTLS_ECP_MAX_BITS
+
 /**
  * The maximum size of the groups, that is, of \c N and \c P.
  */
