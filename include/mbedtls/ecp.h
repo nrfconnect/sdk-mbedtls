@@ -294,6 +294,8 @@ mbedtls_ecp_group;
 #include "ecp_alt.h"
 #endif /* MBEDTLS_ECP_ALT */
 
+#ifndef MBEDTLS_ECP_MAX_BITS
+
 /**
  * The maximum size of the groups, that is, of \c N and \c P.
  */
@@ -330,6 +332,8 @@ mbedtls_ecp_group;
 #define MBEDTLS_ECP_MAX_BITS 192
 #else
 #error "Missing definition of MBEDTLS_ECP_MAX_BITS"
+#endif
+
 #endif
 
 #define MBEDTLS_ECP_MAX_BYTES    ( ( MBEDTLS_ECP_MAX_BITS + 7 ) / 8 )
