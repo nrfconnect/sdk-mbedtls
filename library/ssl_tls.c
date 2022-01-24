@@ -696,7 +696,8 @@ static int ssl_populate_transform( mbedtls_ssl_transform *transform,
     const mbedtls_md_info_t *md_info;
 
 #if !defined(MBEDTLS_SSL_EXPORT_KEYS) && \
-    !defined(MBEDTLS_DEBUG_C)
+    !defined(MBEDTLS_DEBUG_C) && \
+    !defined(MBEDTLS_SSL_DTLS_CONNECTION_ID) /* change from: https://github.com/ARMmbed/mbedtls/pull/3991/files */
     ssl = NULL; /* make sure we don't use it except for those cases */
     (void) ssl;
 #endif
