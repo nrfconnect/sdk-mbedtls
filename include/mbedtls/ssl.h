@@ -549,14 +549,12 @@
 
 /* The value of the CID extension is still TBD as of
  * draft-ietf-tls-dtls-connection-id-05
- * (https://tools.ietf.org/html/draft-ietf-tls-dtls-connection-id-05).
- *
- * A future minor revision of Mbed TLS may change the default value of
- * this option to match evolving standards and usage.
+ * (https://tools.ietf.org/html/draft-ietf-tls-dtls-connection-id-05)
+ * Latest CID value is here:
+ * https://www.iana.org/assignments/tls-extensiontype-values/
+ *       tls-extensiontype-values.xhtml#tls-extensiontype-values-1
  */
-#if !defined(MBEDTLS_TLS_EXT_CID)
-#define MBEDTLS_TLS_EXT_CID                        254 /* TBD */
-#endif
+#define MBEDTLS_TLS_EXT_CID                        54
 
 #define MBEDTLS_TLS_EXT_ECJPAKE_KKPP               256 /* experimental */
 
