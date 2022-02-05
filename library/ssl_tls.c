@@ -1893,7 +1893,7 @@ void mbedtls_ssl_conf_ca_cb(mbedtls_ssl_config *conf,
 #endif /* MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK */
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
 
-#if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
+#if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION) && defined(MBEDTLS_X509_CRT_PARSE_C)
 const unsigned char *mbedtls_ssl_get_hs_sni(mbedtls_ssl_context *ssl,
                                             size_t *name_len)
 {
@@ -1930,7 +1930,7 @@ void mbedtls_ssl_set_hs_authmode(mbedtls_ssl_context *ssl,
 {
     ssl->handshake->sni_authmode = authmode;
 }
-#endif /* MBEDTLS_SSL_SERVER_NAME_INDICATION */
+#endif /* MBEDTLS_SSL_SERVER_NAME_INDICATION && MBEDTLS_X509_CRT_PARSE_C */
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 void mbedtls_ssl_set_verify(mbedtls_ssl_context *ssl,
@@ -2952,7 +2952,7 @@ void mbedtls_ssl_conf_groups(mbedtls_ssl_config *conf,
     conf->group_list = group_list;
 }
 
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(MBEDTLS_X509_CRT_PARSE_C) || defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
 int mbedtls_ssl_set_hostname(mbedtls_ssl_context *ssl, const char *hostname)
 {
     /* Initialize to suppress unnecessary compiler warning */
@@ -2992,7 +2992,7 @@ int mbedtls_ssl_set_hostname(mbedtls_ssl_context *ssl, const char *hostname)
 
     return 0;
 }
-#endif /* MBEDTLS_X509_CRT_PARSE_C */
+#endif /* MBEDTLS_X509_CRT_PARSE_C ||  MBEDTLS_SSL_SERVER_NAME_INDICATION*/
 
 #if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
 void mbedtls_ssl_conf_sni(mbedtls_ssl_config *conf,
@@ -4890,7 +4890,7 @@ void mbedtls_ssl_free(mbedtls_ssl_context *ssl)
         mbedtls_free(ssl->session);
     }
 
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(MBEDTLS_X509_CRT_PARSE_C) || defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
     if (ssl->hostname != NULL) {
         mbedtls_zeroize_and_free(ssl->hostname, strlen(ssl->hostname));
     }
@@ -5742,7 +5742,7 @@ int mbedtls_ssl_check_cert_usage(const mbedtls_x509_crt *cert,
 
     return ret;
 }
-#endif /* MBEDTLS_X509_CRT_PARSE_C */
+#endif /* MBEDTLS_X509_CRT_PARSE_C || MBEDTLS_SSL_SERVER_NAME_INDICATION */
 
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
 int mbedtls_ssl_get_handshake_transcript(mbedtls_ssl_context *ssl,
