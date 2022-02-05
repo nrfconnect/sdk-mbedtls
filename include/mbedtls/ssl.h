@@ -1372,7 +1372,7 @@ struct mbedtls_ssl_context
     /*
      * User settings
      */
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(MBEDTLS_X509_CRT_PARSE_C) || defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
     char *MBEDTLS_PRIVATE(hostname);             /*!< expected peer CN for verification
                                      (and SNI if available)                 */
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
@@ -2944,7 +2944,7 @@ void mbedtls_ssl_conf_sig_hashes( mbedtls_ssl_config *conf,
                                   const int *hashes );
 #endif /* MBEDTLS_KEY_EXCHANGE_WITH_CERT_ENABLED */
 
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(MBEDTLS_X509_CRT_PARSE_C) || defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
 /**
  * \brief          Set or reset the hostname to check against the received
  *                 server certificate. It sets the ServerName TLS extension,
@@ -2964,9 +2964,9 @@ void mbedtls_ssl_conf_sig_hashes( mbedtls_ssl_config *conf,
  *                 On too long input failure, old hostname is unchanged.
  */
 int mbedtls_ssl_set_hostname( mbedtls_ssl_context *ssl, const char *hostname );
-#endif /* MBEDTLS_X509_CRT_PARSE_C */
+#endif /* MBEDTLS_X509_CRT_PARSE_C || MBEDTLS_SSL_SERVER_NAME_INDICATION */
 
-#if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
 /**
  * \brief          Set own certificate and key for the current handshake
  *
@@ -2997,7 +2997,9 @@ int mbedtls_ssl_set_hs_own_cert( mbedtls_ssl_context *ssl,
 void mbedtls_ssl_set_hs_ca_chain( mbedtls_ssl_context *ssl,
                                   mbedtls_x509_crt *ca_chain,
                                   mbedtls_x509_crl *ca_crl );
+#endif /* MBEDTLS_X509_CRT_PARSE_C */
 
+#if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
 /**
  * \brief          Set authmode for the current handshake.
  *
