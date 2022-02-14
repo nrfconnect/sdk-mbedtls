@@ -381,60 +381,234 @@ static int ssl_parse_inner_plaintext( unsigned char const *content,
 #endif /* MBEDTLS_SSL_DTLS_CONNECTION_ID ||
           MBEDTLS_SSL_PROTO_TLS1_3_EXPERIMENTAL */
 
-/* `add_data` must have size 13 Bytes if the CID extension is disabled,
- * and 13 + 1 + CID-length Bytes if the CID extension is enabled. */
+/* The size of the `add_data` structure depends on various
+ * factors, namely
+ *
+ * 1) CID functionality disabled
+ *
+ * size = 13 bytes
+ *
+ * 2) CID functionality based on RFC 9146 enabled
+ *
+ * size = 8 + 1 + 1 + 1 + 2 + 2 + 6 + 2 + CID-length
+ *      = 23 + CID-length
+ *
+ * 3) CID functionality based on legacy CID version
+    according to draft-ietf-tls-dtls-connection-id-05
+ *  https://tools.ietf.org/html/draft-ietf-tls-dtls-connection-id-05
+ *
+ * size = 13 + 1 + CID-length
+ *
+ * More information about the CID usage:
+ * 
+ * Per Section 5.3 of draft-ietf-tls-dtls-connection-id-05 the
+ * size of the additional data structure is calculated as:
+ *
+ * additional_data =
+ *    8: seq_num +
+ *    1:                  tls12_cid +
+ *    2:     DTLSCipherText.version +
+ *    n:                        cid +
+ *    1:                 cid_length +
+ *    2: length_of_DTLSInnerPlaintext
+ *
+ * Per RFC 9146 the size of the add_data structure is calculated as:
+ * 
+ * additional_data =
+ *    8:        seq_num_placeholder +
+ *    1:                  tls12_cid +
+ *    1:                 cid_length +
+ *    1:                  tls12_cid +
+ *    2:     DTLSCiphertext.version +
+ *    2:                      epoch +
+ *    6:            sequence_number +
+ *    n:                        cid +
+ *    2: length_of_DTLSInnerPlaintext
+ *
+ */
 static void ssl_extract_add_data_from_record( unsigned char* add_data,
                                               size_t *add_data_len,
                                               mbedtls_record *rec,
                                               unsigned minor_ver )
 {
-    /* Quoting RFC 5246 (TLS 1.2):
+    /* Several types of ciphers have been defined for use with TLS and DTLS,
+     * and the MAC calculations for those ciphers differ slightly. Further
+     * variants were added when the CID functionality was added with RFC 9146.
+     * This implementations also considers the use of a legacy version of the
+     * CID specification published in draft-ietf-tls-dtls-connection-id-05,
+     * which is used in deployments.
+     * 
+     * We will distinguish between the non-CID and the CID cases below.
+     *
+     * --- Non-CID cases ---
+     *
+     * Quoting RFC 5246 (TLS 1.2):
      *
      *    additional_data = seq_num + TLSCompressed.type +
      *                      TLSCompressed.version + TLSCompressed.length;
      *
-     * For the CID extension, this is extended as follows
-     * (quoting draft-ietf-tls-dtls-connection-id-05,
-     *  https://tools.ietf.org/html/draft-ietf-tls-dtls-connection-id-05):
-     *
-     *       additional_data = seq_num + DTLSPlaintext.type +
-     *                         DTLSPlaintext.version +
-     *                         cid +
-     *                         cid_length +
-     *                         length_of_DTLSInnerPlaintext;
-     *
      * For TLS 1.3, the record sequence number is dropped from the AAD
      * and encoded within the nonce of the AEAD operation instead.
-     */
+     * Moreover, the additional data involves the length of the TLS
+     * ciphertext, not the TLS plaintext as in earlier versions.
+     * Quoting RFC 8446 (TLS 1.3):
+     *
+     *      additional_data = TLSCiphertext.opaque_type ||
+     *                        TLSCiphertext.legacy_record_version ||
+     *                        TLSCiphertext.length
+     *
+     * We pass the tag length to this function in order to compute the
+     * ciphertext length from the inner plaintext length rec->data_len via
+     *
+     *     TLSCiphertext.length = TLSInnerPlaintext.length + taglen.
+     *
+     * --- CID cases ---
+     *
+     * RFC 9146 uses a common pattern when constructing the data
+     * passed into a MAC / AEAD cipher.
+     *
+     * Data concatenation for MACs used with block ciphers with
+     * Encrypt-then-MAC Processing (with CID):
+     *
+     *  data = seq_num_placeholder +
+     *         tls12_cid +
+     *         cid_length +
+     *         tls12_cid +
+     *         DTLSCiphertext.version +
+     *         epoch +
+     *         sequence_number +
+     *         cid +
+     *         DTLSCiphertext.length +
+     *         IV +
+     *         ENC(content + padding + padding_length)
+     *
+     * Data concatenation for MACs used with block ciphers (with CID):
+     *
+     *  data =  seq_num_placeholder +
+     *          tls12_cid +
+     *          cid_length +
+     *          tls12_cid +
+     *          DTLSCiphertext.version +
+     *          epoch +
+     *          sequence_number +
+     *          cid +
+     *          length_of_DTLSInnerPlaintext +
+     *          DTLSInnerPlaintext.content +
+     *          DTLSInnerPlaintext.real_type +
+     *          DTLSInnerPlaintext.zeros
+     *
+     * AEAD ciphers use the following additional data calculation (with CIDs):
+     *
+     *     additional_data = seq_num_placeholder +
+     *                tls12_cid +
+     *                cid_length +
+     *                tls12_cid +
+     *                DTLSCiphertext.version +
+     *                epoch +
+     *                sequence_number +
+     *                cid +
+     *                length_of_DTLSInnerPlaintext
+     *
+     * Section 5.3 of draft-ietf-tls-dtls-connection-id-05 (for legacy CID use)
+     * defines the additional data calculation as follows:
+     *
+     *     additional_data = seq_num +
+     *                tls12_cid +
+     *                DTLSCipherText.version +
+     *                cid +
+     *                cid_length +
+     *                length_of_DTLSInnerPlaintext
+    */
 
     unsigned char *cur = add_data;
 
-#if defined(MBEDTLS_SSL_PROTO_TLS1_3_EXPERIMENTAL)
-    if( minor_ver != MBEDTLS_SSL_MINOR_VERSION_4 )
-#endif /* MBEDTLS_SSL_PROTO_TLS1_3_EXPERIMENTAL */
+#if defined(MBEDTLS_SSL_DTLS_CONNECTION_ID)
+    size_t ad_len_field = rec->data_len;
+    const unsigned char seq_num_placeholder[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+#endif /* MBEDTLS_SSL_DTLS_CONNECTION_ID */
+
+#if defined(MBEDTLS_SSL_PROTO_TLS1_3)
+    if( minor_ver == MBEDTLS_SSL_MINOR_VERSION_4 )
+    {
+#if defined(MBEDTLS_SSL_DTLS_CONNECTION_ID)
+        /* In TLS 1.3, the AAD contains the length of the TLSCiphertext,
+         * which differs from the length of the TLSInnerPlaintext
+         * by the length of the authentication tag. */
+        ad_len_field += taglen;
+#endif /* MBEDTLS_SSL_DTLS_CONNECTION_ID */
+    }
+    else
+#endif /* MBEDTLS_SSL_PROTO_TLS1_3 */
     {
         ((void) minor_ver);
-        memcpy( cur, rec->ctr, sizeof( rec->ctr ) );
-        cur += sizeof( rec->ctr );
+
+#if defined(MBEDTLS_SSL_DTLS_CONNECTION_ID)
+        if( rec->cid_len != 0 )
+        {
+            // seq_num_placeholder
+            memcpy( cur, seq_num_placeholder, sizeof(seq_num_placeholder) );
+            cur += sizeof( seq_num_placeholder );
+
+            // tls12_cid type
+            *cur = rec->type;
+            cur++;
+
+            // cid_length
+            *cur = rec->cid_len;
+            cur++;
+        }
+        else
+        {
+            // epoch + sequence number
+            memcpy( cur, rec->ctr, sizeof( rec->ctr ) );
+            cur += sizeof( rec->ctr );
+        }
+#else
+        // epoch + sequence number
+        memcpy(cur, rec->ctr, sizeof(rec->ctr));
+        cur += sizeof(rec->ctr);
+#endif /* MBEDTLS_SSL_DTLS_CONNECTION_ID */
     }
 
+    // type
     *cur = rec->type;
     cur++;
 
+    // version
     memcpy( cur, rec->ver, sizeof( rec->ver ) );
     cur += sizeof( rec->ver );
 
-#if defined(MBEDTLS_SSL_DTLS_CONNECTION_ID)
-    if( rec->cid_len != 0 )
+#if defined(MBEDTLS_SSL_DTLS_CONNECTION_ID_LEGACY)
+    if (rec->cid_len != 0)
     {
-        memcpy( cur, rec->cid, rec->cid_len );
+        // CID
+        memcpy(cur, rec->cid, rec->cid_len);
         cur += rec->cid_len;
 
+        // cid_length
         *cur = rec->cid_len;
         cur++;
 
         cur[0] = ( rec->data_len >> 8 ) & 0xFF;
         cur[1] = ( rec->data_len >> 0 ) & 0xFF;
+        cur += 2;
+    }
+    else
+#elif defined(MBEDTLS_SSL_DTLS_CONNECTION_ID)
+    if( rec->cid_len != 0 )
+    {
+        // epoch + sequence number
+        memcpy(cur, rec->ctr, sizeof(rec->ctr));
+        cur += sizeof(rec->ctr);
+
+        // CID
+        memcpy( cur, rec->cid, rec->cid_len );
+        cur += rec->cid_len;
+
+        // length of inner plaintext
+        cur[0] = ( ad_len_field >> 8 ) & 0xFF;
+        cur[1] = ( ad_len_field >> 0 ) & 0xFF;
+        //MBEDTLS_PUT_UINT16_BE( ad_len_field, cur, 0 );
         cur += 2;
     }
     else
@@ -508,7 +682,13 @@ int mbedtls_ssl_encrypt_buf( mbedtls_ssl_context *ssl,
     mbedtls_cipher_mode_t mode;
     int auth_done = 0;
     unsigned char * data;
-    unsigned char add_data[13 + 1 + MBEDTLS_SSL_CID_OUT_LEN_MAX ];
+#if defined(MBEDTLS_SSL_DTLS_CONNECTION_ID)
+    unsigned char add_data[23 + MBEDTLS_SSL_CID_OUT_LEN_MAX];
+#elif defined(MBEDTLS_SSL_DTLS_CONNECTION_ID_LEGACY)
+   unsigned char add_data[13 + 1 + MBEDTLS_SSL_CID_OUT_LEN_MAX];
+#else
+    unsigned char add_data[13];
+#endif
     size_t add_data_len;
     size_t post_avail;
 
@@ -645,28 +825,28 @@ int mbedtls_ssl_encrypt_buf( mbedtls_ssl_context *ssl,
             return( MBEDTLS_ERR_SSL_BUFFER_TOO_SMALL );
         }
 #if defined(MBEDTLS_SSL_PROTO_TLS1_2)
-        if( transform->minor_ver >= MBEDTLS_SSL_MINOR_VERSION_1 )
-        {
-            unsigned char mac[MBEDTLS_SSL_MAC_ADD];
+        unsigned char mac[MBEDTLS_SSL_MAC_ADD];
+        int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
 
-            ssl_extract_add_data_from_record( add_data, &add_data_len, rec,
-                                              transform->minor_ver );
+        ssl_extract_add_data_from_record( add_data, &add_data_len, rec,
+                                          transform->minor_ver );
 
-            mbedtls_md_hmac_update( &transform->md_ctx_enc, add_data,
-                                    add_data_len );
-            mbedtls_md_hmac_update( &transform->md_ctx_enc,
-                                    data, rec->data_len );
-            mbedtls_md_hmac_finish( &transform->md_ctx_enc, mac );
-            mbedtls_md_hmac_reset( &transform->md_ctx_enc );
+        ret = mbedtls_md_hmac_update( &transform->md_ctx_enc, add_data,
+                                      add_data_len );
+        if( ret != 0 )
+            goto hmac_failed_etm_disabled;
+        ret = mbedtls_md_hmac_update( &transform->md_ctx_enc, data, rec->data_len );
+        if( ret != 0 )
+            goto hmac_failed_etm_disabled;
+        ret = mbedtls_md_hmac_finish( &transform->md_ctx_enc, mac );
+        if( ret != 0 )
+            goto hmac_failed_etm_disabled;
+        ret = mbedtls_md_hmac_reset( &transform->md_ctx_enc );
+        if( ret != 0 )
+            goto hmac_failed_etm_disabled;
 
-            memcpy( data + rec->data_len, mac, transform->maclen );
-        }
-        else
+        memcpy( data + rec->data_len, mac, transform->maclen );
 #endif
-        {
-            MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
-            return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
-        }
 
         MBEDTLS_SSL_DEBUG_BUF( 4, "computed mac", data + rec->data_len,
                                transform->maclen );
@@ -674,6 +854,14 @@ int mbedtls_ssl_encrypt_buf( mbedtls_ssl_context *ssl,
         rec->data_len += transform->maclen;
         post_avail -= transform->maclen;
         auth_done++;
+
+    hmac_failed_etm_disabled:
+        mbedtls_platform_zeroize( mac, transform->maclen );
+        if( ret != 0 )
+        {
+            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_md_hmac_xxx", ret );
+            return( ret );
+        }
     }
 #endif /* MBEDTLS_SSL_SOME_SUITES_USE_MAC */
 
@@ -897,13 +1085,30 @@ int mbedtls_ssl_encrypt_buf( mbedtls_ssl_context *ssl,
         {
             unsigned char mac[MBEDTLS_SSL_MAC_ADD];
 
-            /*
+            /* MAC computation (without CID):
+             *
              * MAC(MAC_write_key, seq_num +
              *     TLSCipherText.type +
              *     TLSCipherText.version +
              *     length_of( (IV +) ENC(...) ) +
-             *     IV + // except for TLS 1.0
+             *     IV +
              *     ENC(content + padding + padding_length));
+             *
+             * MAC calculation (with CID):
+             *
+             *     MAC(MAC_write_key,
+             *         seq_num_placeholder +
+             *         tls12_cid +
+             *         cid_length +
+             *         tls12_cid +
+             *         DTLSCiphertext.version +
+             *         epoch +
+             *         sequence_number +
+             *         cid +
+             *         DTLSCiphertext.length +
+             *         IV +
+             *         ENC(content + padding + padding_length)
+             *        );
              */
 
             if( post_avail < transform->maclen)
@@ -919,18 +1124,34 @@ int mbedtls_ssl_encrypt_buf( mbedtls_ssl_context *ssl,
             MBEDTLS_SSL_DEBUG_BUF( 4, "MAC'd meta-data", add_data,
                                    add_data_len );
 
-            mbedtls_md_hmac_update( &transform->md_ctx_enc, add_data,
-                                    add_data_len );
-            mbedtls_md_hmac_update( &transform->md_ctx_enc,
-                                    data, rec->data_len );
-            mbedtls_md_hmac_finish( &transform->md_ctx_enc, mac );
-            mbedtls_md_hmac_reset( &transform->md_ctx_enc );
+            ret = mbedtls_md_hmac_update( &transform->md_ctx_enc, add_data,
+                                          add_data_len );
+            if( ret != 0 )
+                goto hmac_failed_etm_enabled;
+            ret = mbedtls_md_hmac_update( &transform->md_ctx_enc,
+                                          data, rec->data_len );
+            if( ret != 0 )
+                goto hmac_failed_etm_enabled;
+            ret = mbedtls_md_hmac_finish( &transform->md_ctx_enc, mac );
+            if( ret != 0 )
+                goto hmac_failed_etm_enabled;
+            ret = mbedtls_md_hmac_reset( &transform->md_ctx_enc );
+            if( ret != 0 )
+                goto hmac_failed_etm_enabled;
 
             memcpy( data + rec->data_len, mac, transform->maclen );
 
             rec->data_len += transform->maclen;
             post_avail -= transform->maclen;
             auth_done++;
+
+        hmac_failed_etm_enabled:
+            mbedtls_platform_zeroize( mac, transform->maclen );
+            if( ret != 0 )
+            {
+                MBEDTLS_SSL_DEBUG_RET( 1, "HMAC calculation failed", ret );
+                return( ret );
+            }
         }
 #endif /* MBEDTLS_SSL_ENCRYPT_THEN_MAC */
     }
@@ -1438,12 +1659,20 @@ int mbedtls_ssl_decrypt_buf( mbedtls_ssl_context const *ssl,
             /* Calculate expected MAC. */
             MBEDTLS_SSL_DEBUG_BUF( 4, "MAC'd meta-data", add_data,
                                    add_data_len );
-            mbedtls_md_hmac_update( &transform->md_ctx_dec, add_data,
-                                    add_data_len );
-            mbedtls_md_hmac_update( &transform->md_ctx_dec,
+            ret = mbedtls_md_hmac_update( &transform->md_ctx_dec, add_data,
+                                          add_data_len );
+            if( ret != 0 )
+                goto hmac_failed_etm_enabled;
+            ret = mbedtls_md_hmac_update( &transform->md_ctx_dec,
                                     data, rec->data_len );
-            mbedtls_md_hmac_finish( &transform->md_ctx_dec, mac_expect );
-            mbedtls_md_hmac_reset( &transform->md_ctx_dec );
+            if( ret != 0 )
+                goto hmac_failed_etm_enabled;
+            ret = mbedtls_md_hmac_finish( &transform->md_ctx_dec, mac_expect );
+            if( ret != 0 )
+                goto hmac_failed_etm_enabled;
+            ret = mbedtls_md_hmac_reset( &transform->md_ctx_dec );
+            if( ret != 0 )
+                goto hmac_failed_etm_enabled;
 
             MBEDTLS_SSL_DEBUG_BUF( 4, "message  mac", data + rec->data_len,
                                    transform->maclen );
@@ -1451,13 +1680,23 @@ int mbedtls_ssl_decrypt_buf( mbedtls_ssl_context const *ssl,
                                    transform->maclen );
 
             /* Compare expected MAC with MAC at the end of the record. */
-            if( mbedtls_ssl_safer_memcmp( data + rec->data_len, mac_expect,
-                                          transform->maclen ) != 0 )
+            if( mbedtls_ct_memcmp( data + rec->data_len, mac_expect,
+                                              transform->maclen ) != 0 )
             {
                 MBEDTLS_SSL_DEBUG_MSG( 1, ( "message mac does not match" ) );
-                return( MBEDTLS_ERR_SSL_INVALID_MAC );
+                ret = MBEDTLS_ERR_SSL_INVALID_MAC;
+                goto hmac_failed_etm_enabled;
             }
             auth_done++;
+
+        hmac_failed_etm_enabled:
+            mbedtls_platform_zeroize( mac_expect, transform->maclen );
+            if( ret != 0 )
+            {
+                if( ret != MBEDTLS_ERR_SSL_INVALID_MAC )
+                    MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_hmac_xxx", ret );
+                return( ret );
+            }
         }
 #endif /* MBEDTLS_SSL_ENCRYPT_THEN_MAC */
 
