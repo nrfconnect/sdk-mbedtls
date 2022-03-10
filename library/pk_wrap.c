@@ -733,12 +733,11 @@ static int ecdsa_verify_wrap(void *ctx_arg, mbedtls_md_type_t md_alg,
      * so use that as the buffer size. */
     unsigned char buf[MBEDTLS_PSA_MAX_EC_PUBKEY_LENGTH];
     unsigned char *p;
-    psa_algorithm_t psa_sig_md = PSA_ALG_ECDSA_ANY;
+    psa_algorithm_t psa_sig_md = PSA_ALG_ECDSA(mbedtls_psa_translate_md(md_alg));
     size_t curve_bits;
     psa_ecc_family_t curve =
         mbedtls_ecc_group_to_psa(ctx->grp.id, &curve_bits);
     const size_t signature_part_size = (ctx->grp.nbits + 7) / 8;
-    ((void) md_alg);
 
     if (curve == 0) {
         return MBEDTLS_ERR_PK_BAD_INPUT_DATA;
