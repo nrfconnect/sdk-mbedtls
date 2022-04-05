@@ -559,15 +559,16 @@ int mbedtls_ssl_tls12_write_client_hello_exts(mbedtls_ssl_context *ssl,
             return ret;
         }
         p += ext_len;
-    }
-#endif
 
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
-    if ((ret = ssl_write_ecjpake_kkpp_ext(ssl, p, end, &ext_len)) != 0) {
-        MBEDTLS_SSL_DEBUG_RET(1, "ssl_write_ecjpake_kkpp_ext", ret);
-        return ret;
+        if ((ret = ssl_write_ecjpake_kkpp_ext(ssl, p, end, &ext_len)) != 0) {
+            MBEDTLS_SSL_DEBUG_RET(1, "ssl_write_ecjpake_kkpp_ext", ret);
+            return ret;
+        }
+        p += ext_len;
+#endif
     }
-    p += ext_len;
+
 #endif
 
 #if defined(MBEDTLS_SSL_DTLS_CONNECTION_ID)
