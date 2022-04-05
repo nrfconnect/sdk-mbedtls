@@ -1242,17 +1242,17 @@ static int ssl_write_client_hello( mbedtls_ssl_context *ssl )
             return( ret );
         }
         ext_len += olen;
-    }
-#endif
 
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
-    if( ( ret = ssl_write_ecjpake_kkpp_ext( ssl, p + 2 + ext_len,
-                                            end, &olen ) ) != 0 )
-    {
-        MBEDTLS_SSL_DEBUG_RET( 1, "ssl_write_ecjpake_kkpp_ext", ret );
-        return( ret );
+        if( ( ret = ssl_write_ecjpake_kkpp_ext( ssl, p + 2 + ext_len,
+                                                end, &olen ) ) != 0 )
+        {
+            MBEDTLS_SSL_DEBUG_RET( 1, "ssl_write_ecjpake_kkpp_ext", ret );
+            return( ret );
+        }
+        ext_len += olen;
+#endif
     }
-    ext_len += olen;
 #endif
 
 #if defined(MBEDTLS_SSL_DTLS_CONNECTION_ID)
