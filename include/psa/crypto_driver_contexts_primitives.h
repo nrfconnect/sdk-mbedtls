@@ -108,6 +108,7 @@ typedef union {
 #if defined(PSA_CRYPTO_DRIVER_CC3XX)
     cc3xx_hash_operation_t cc3xx_driver_ctx;
 #endif
+    uint8_t oberon_hash_operation[52 * sizeof(uint64_t) + sizeof(psa_algorithm_t)] __attribute__((aligned(8)));
 } psa_driver_hash_context_t;
 
 typedef union {
