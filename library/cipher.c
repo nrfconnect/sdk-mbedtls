@@ -284,6 +284,7 @@ int mbedtls_cipher_setkey( mbedtls_cipher_context_t *ctx,
                                  /* mbedtls_psa_translate_cipher_operation( operation ); */
                                  PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT );
         psa_set_key_algorithm( &attributes, cipher_psa->alg );
+        psa_set_key_bits( &attributes, (size_t) key_bitlen );
 
         status = psa_import_key( &attributes, key, key_bytelen,
                                  &cipher_psa->slot );
