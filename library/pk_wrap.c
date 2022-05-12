@@ -953,6 +953,7 @@ static int ecdsa_verify_wrap( void *ctx_arg, mbedtls_md_type_t md_alg,
     psa_set_key_type( &attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY( curve ) );
     psa_set_key_usage_flags( &attributes, PSA_KEY_USAGE_VERIFY_HASH );
     psa_set_key_algorithm( &attributes, psa_sig_md );
+    psa_set_key_bits( &attributes, curve_bits );
 
     status = psa_import_key( &attributes,
                              buf + sizeof( buf ) - key_len, key_len,
