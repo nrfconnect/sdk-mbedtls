@@ -53,8 +53,7 @@
 #if defined(MBEDTLS_ECP_RESTARTABLE)
 #define MBEDTLS_ECDH_LEGACY_CONTEXT
 #else
-// mbed TLS 3.0.0 prototype: Disable legacy context being unset here
-//#undef MBEDTLS_ECDH_LEGACY_CONTEXT
+#undef MBEDTLS_ECDH_LEGACY_CONTEXT
 #endif
 
 #if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
