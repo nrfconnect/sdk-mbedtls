@@ -295,7 +295,7 @@ static int rsa_verify_wrap(void *ctx, mbedtls_md_type_t md_alg,
 }
 #endif
 
-#if defined(MBEDTLS_PSA_CRYPTO_C)
+#if defined(MBEDTLS_USE_PSA_CRYPTO)
 int  mbedtls_pk_psa_rsa_sign_ext(psa_algorithm_t alg,
                                  mbedtls_rsa_context *rsa_ctx,
                                  const unsigned char *hash, size_t hash_len,
