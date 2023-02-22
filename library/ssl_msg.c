@@ -521,6 +521,7 @@ static void ssl_extract_add_data_from_record( unsigned char* add_data,
     size_t ad_len_field = rec->data_len;
 
 #if defined(MBEDTLS_SSL_DTLS_CONNECTION_ID)
+    size_t ad_len_field = rec->data_len;
     const unsigned char seq_num_placeholder[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 #endif /* MBEDTLS_SSL_DTLS_CONNECTION_ID */
 
