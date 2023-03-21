@@ -5778,30 +5778,12 @@ static psa_status_t psa_key_agreement_internal( psa_key_derivation_operation_t *
 
     /* Step 1: run the secret agreement algorithm to generate the shared
      * secret. */
-    psa_key_attributes_t attributes = {
-        .core = private_key->attr
-    };
-
-    status = psa_driver_wrapper_key_agreement( ka_alg,
-                                               &attributes,
-                                               private_key->key.data,
-                                               private_key->key.bytes,
-                                               peer_key,
-                                               peer_key_length,
-                                               shared_secret,
-                                               sizeof( shared_secret ),
-                                               &shared_secret_length);
-
-    if( status == PSA_ERROR_NOT_SUPPORTED )
-    {
-        status = psa_key_agreement_raw_internal( ka_alg,
-                                                 private_key,
-                                                 peer_key, peer_key_length,
-                                                 shared_secret,
-                                                 sizeof( shared_secret ),
-                                                 &shared_secret_length );
-    }
-
+    status = psa_key_agreement_raw_internal( ka_alg,
+                                             private_key,
+                                             peer_key, peer_key_length,
+                                             shared_secret,
+                                             sizeof( shared_secret ),
+                                             &shared_secret_length );
     if( status != PSA_SUCCESS )
         goto exit;
 
