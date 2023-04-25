@@ -984,132 +984,19 @@ int mbedtls_ssl_encrypt_buf( mbedtls_ssl_context *ssl,
          * Encrypt and authenticate
          */
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
-        if (transform->psa_alg == PSA_ALG_CHACHA20_POLY1305)
+        status = psa_aead_encrypt( transform->psa_key_enc,
+                               transform->psa_alg,
+                               iv, transform->ivlen,
+                               add_data, add_data_len,
+                               data, rec->data_len,
+                               data, rec->buf_len - (data - rec->buf),
+                               &rec->data_len );
+
+        if( status != PSA_SUCCESS )
         {
-            /*
-            * Workaround for lack of ChaCha/Poly in-place encryption in nrf_cc3xx
-            * Please see NCSDK-20188 for details on removing this workaround.
-            */
-            const size_t max_chunk_size = 128;
-            const size_t poly1305_tag_size = 16;
-            size_t plain_left = rec->data_len;
-            size_t olen = 0;
-            size_t tag_size_out = 0;
-            size_t current_size;
-            size_t current_out_size;
-            unsigned char temp_buffer[max_chunk_size];
-            psa_aead_operation_t op = PSA_AEAD_OPERATION_INIT;
-
-            status = psa_aead_encrypt_setup( &op,
-                                             transform->psa_key_enc,
-                                             transform->psa_alg );
-            if(status != PSA_SUCCESS)
-            {
-                ret = MBEDTLS_ERR_SSL_INTERNAL_ERROR;
-                MBEDTLS_SSL_DEBUG_RET( 1, "psa_aead_encrypt_setup failed", ret );
-                return ret;
-            }
-
-            /* Set lengths (AAD and plaintext) for encryption */
-            status = psa_aead_set_lengths( &op, add_data_len, plain_left);
-
-            if(status != PSA_SUCCESS)
-            {
-                ret = MBEDTLS_ERR_SSL_INTERNAL_ERROR;
-                MBEDTLS_SSL_DEBUG_RET( 1, "psa_aead_set_lengths failed", ret );
-                return ret;
-            }
-
-            /* Set nonce for encryption */
-            status = psa_aead_set_nonce( &op, iv, transform->ivlen );
-
-            if(status != PSA_SUCCESS)
-            {
-                ret = MBEDTLS_ERR_SSL_INTERNAL_ERROR;
-                MBEDTLS_SSL_DEBUG_RET( 1, "psa_aead_set_nonce failed", ret );
-                return ret;
-            }
-
-            /* Pass the autheticated data in one call */
-            status = psa_aead_update_ad( &op, add_data, add_data_len );
-            if(status != PSA_SUCCESS)
-            {
-                ret = MBEDTLS_ERR_SSL_INTERNAL_ERROR;
-                MBEDTLS_SSL_DEBUG_RET( 1, "psa_aead_update_ad failed", ret );
-                return ret;
-            }
-
-            /* Loop through the plaintext in chunks up to max-size */
-            while (plain_left > 0)
-            {
-                current_size = (plain_left < max_chunk_size) ? plain_left: max_chunk_size;
-
-                status = psa_aead_update( &op,
-                                          data + olen, current_size,
-                                          temp_buffer, current_size,
-                                          &current_out_size );
-
-                if(status != PSA_SUCCESS)
-                {
-                    ret = MBEDTLS_ERR_SSL_INTERNAL_ERROR;
-                    MBEDTLS_SSL_DEBUG_RET( 1, "psa_aead_update failed", ret );
-                    return ret;
-                }
-
-                memcpy(data + olen, temp_buffer, current_out_size);
-
-                olen += current_out_size;
-                plain_left -= current_out_size;
-            }
-
-            status = psa_aead_finish( &op,
-                                      temp_buffer, max_chunk_size,
-                                      &current_out_size,
-                                      data + olen,
-                                      poly1305_tag_size,
-                                      &tag_size_out);
-
-            if (status != PSA_SUCCESS)
-            {
-                ret = MBEDTLS_ERR_SSL_INTERNAL_ERROR;
-                MBEDTLS_SSL_DEBUG_RET( 1, "psa_aead_verify failed", ret );
-                return ret;
-            }
-
-            // Add extra ciphertext data if necessary
-            if (current_out_size > 0)
-            {
-                memcpy(data + olen, temp_buffer, current_out_size);
-                olen += current_out_size;
-            }
-
-            /* Append length of TAG */
-            rec->data_len = olen + poly1305_tag_size;
-
-            if (tag_size_out != poly1305_tag_size)
-            {
-                ret = MBEDTLS_ERR_SSL_INTERNAL_ERROR;
-                MBEDTLS_SSL_DEBUG_RET( 1, "ChaCha/Poly tag size mismatch", ret );
-                return ret;
-            }
-
-        }
-        else
-        {
-            status = psa_aead_encrypt( transform->psa_key_enc,
-                                transform->psa_alg,
-                                iv, transform->ivlen,
-                                add_data, add_data_len,
-                                data, rec->data_len,
-                                data, rec->buf_len - (data - rec->buf),
-                                &rec->data_len );
-
-            if( status != PSA_SUCCESS )
-            {
-                ret = psa_ssl_status_to_mbedtls( status );
-                MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ssl_encrypt_buf", ret );
-                return( ret );
-            }
+            ret = psa_ssl_status_to_mbedtls( status );
+            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ssl_encrypt_buf", ret );
+            return( ret );
         }
 #else
         if( ( ret = mbedtls_cipher_auth_encrypt_ext( &transform->cipher_ctx_enc,
@@ -1534,121 +1421,19 @@ int mbedtls_ssl_decrypt_buf( mbedtls_ssl_context const *ssl,
          * Decrypt and authenticate
          */
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
-        if (transform->psa_alg == PSA_ALG_CHACHA20_POLY1305)
+        status = psa_aead_decrypt( transform->psa_key_dec,
+                               transform->psa_alg,
+                               iv, transform->ivlen,
+                               add_data, add_data_len,
+                               data, rec->data_len + transform->taglen,
+                               data, rec->buf_len - (data - rec->buf),
+                               &olen );
+
+        if( status != PSA_SUCCESS )
         {
-            /*
-            * Workaround for lack of ChaCha/Poly in-place decryption in nrf_cc3xx
-            * Please see NCSDK-20188 for details on removing this workaround.
-            */
-            const size_t max_chunk_size = 128;
-            const size_t poly1305_tag_size = 16;
-            size_t cipher_left = rec->data_len; /* Not counting TAG */
-            size_t current_size;
-            size_t current_out_size;
-            unsigned char temp_buffer[max_chunk_size];
-            psa_aead_operation_t op = PSA_AEAD_OPERATION_INIT;
-            uint8_t *tag = data + cipher_left; // Should point to tag
-
-            status = psa_aead_decrypt_setup( &op,
-                                             transform->psa_key_dec,
-                                             transform->psa_alg );
-            if(status != PSA_SUCCESS)
-            {
-                ret = MBEDTLS_ERR_SSL_INTERNAL_ERROR;
-                MBEDTLS_SSL_DEBUG_RET( 1, "psa_aead_decrypt_setup failed", ret );
-                return ret;
-            }
-
-            /* Set lengths (AAD and plaintext) for decryption */
-            status = psa_aead_set_lengths( &op, add_data_len, cipher_left);
-
-            if(status != PSA_SUCCESS)
-            {
-                ret = MBEDTLS_ERR_SSL_INTERNAL_ERROR;
-                MBEDTLS_SSL_DEBUG_RET( 1, "psa_aead_set_lengths failed", ret );
-                return ret;
-            }
-
-            /* Set nonce for decryption */
-            status = psa_aead_set_nonce( &op, iv, transform->ivlen );
-
-            if(status != PSA_SUCCESS)
-            {
-                ret = MBEDTLS_ERR_SSL_INTERNAL_ERROR;
-                MBEDTLS_SSL_DEBUG_RET( 1, "psa_aead_set_nonce failed", ret );
-                return ret;
-            }
-
-            /* Pass the autheticated data in one call */
-            status = psa_aead_update_ad( &op, add_data, add_data_len );
-            if(status != PSA_SUCCESS)
-            {
-                ret = MBEDTLS_ERR_SSL_INTERNAL_ERROR;
-                MBEDTLS_SSL_DEBUG_RET( 1, "psa_aead_update_ad failed", ret );
-                return ret;
-            }
-
-            /* Loop through the ciphertext in chunks up to max-size */
-            olen = 0;
-            while (cipher_left > 0)
-            {
-                current_size = (cipher_left < max_chunk_size) ? cipher_left: max_chunk_size;
-
-                status = psa_aead_update( &op,
-                                          data + olen, current_size,
-                                          temp_buffer, current_size,
-                                          &current_out_size );
-
-                if(status != PSA_SUCCESS)
-                {
-                    ret = MBEDTLS_ERR_SSL_INTERNAL_ERROR;
-                    MBEDTLS_SSL_DEBUG_RET( 1, "psa_aead_update failed", ret );
-                    return ret;
-                }
-
-                memcpy(data + olen, temp_buffer, current_out_size);
-
-                olen += current_out_size;
-                cipher_left -= current_out_size;
-            }
-
-            status = psa_aead_verify( &op,
-                                      temp_buffer,
-                                      max_chunk_size,
-                                      &current_out_size,
-                                      tag,
-                                      poly1305_tag_size);
-
-            if (status != PSA_SUCCESS)
-            {
-                ret = MBEDTLS_ERR_SSL_INTERNAL_ERROR;
-                MBEDTLS_SSL_DEBUG_RET( 1, "psa_aead_verify failed", ret );
-                return ret;
-            }
-
-            /* Add extra plaintext data if necessary */
-            if (current_out_size > 0)
-            {
-                memcpy(data + olen, temp_buffer, current_out_size);
-                olen += current_out_size;
-            }
-        }
-        else
-        {
-            status = psa_aead_decrypt( transform->psa_key_dec,
-                                       transform->psa_alg,
-                                       iv, transform->ivlen,
-                                       add_data, add_data_len,
-                                       data, rec->data_len + transform->taglen,
-                                       data, rec->buf_len - (data - rec->buf),
-                                       &olen );
-
-            if( status != PSA_SUCCESS )
-            {
-                ret = psa_ssl_status_to_mbedtls( status );
-                MBEDTLS_SSL_DEBUG_RET( 1, "psa_aead_decrypt", ret );
-                return( ret );
-            }
+            ret = psa_ssl_status_to_mbedtls( status );
+            MBEDTLS_SSL_DEBUG_RET( 1, "psa_aead_decrypt", ret );
+            return( ret );
         }
 #else
         if( ( ret = mbedtls_cipher_auth_decrypt_ext( &transform->cipher_ctx_dec,
