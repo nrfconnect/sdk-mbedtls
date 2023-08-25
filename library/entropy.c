@@ -45,10 +45,6 @@ void mbedtls_entropy_init( mbedtls_entropy_context *ctx )
     memset( ctx->source, 0, sizeof( ctx->source ) );
 
 #if defined(MBEDTLS_THREADING_C)
-    /* This is a workaround, the CryptoCell runtime library which implements the mutex
-       initialization function expects the mutex context to be zeroized. Otherwise it will
-       generate a fault. See NCSDK-17004 for more information. */
-    memset(&ctx->mutex, 0, sizeof(ctx->mutex));
     mbedtls_mutex_init( &ctx->mutex );
 #endif
 
