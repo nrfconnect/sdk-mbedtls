@@ -349,6 +349,8 @@ mbedtls_ecp_group;
 #error "Missing definition of MBEDTLS_ECP_MAX_BITS"
 #endif
 
+#endif
+
 #define MBEDTLS_ECP_MAX_BYTES    ((MBEDTLS_ECP_MAX_BITS + 7) / 8)
 #define MBEDTLS_ECP_MAX_PT_LEN   (2 * MBEDTLS_ECP_MAX_BYTES + 1)
 
