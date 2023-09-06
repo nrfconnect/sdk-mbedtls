@@ -131,12 +131,6 @@
 #define MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_SOME_EPHEMERAL_ENABLED
 #endif
 
-/* Make sure all configuration symbols are set before including check_config.h,
- * even the ones that are calculated programmatically. */
-#if defined(MBEDTLS_PSA_CRYPTO_CONFIG) /* PSA_WANT_xxx influences MBEDTLS_xxx */ || \
-    defined(MBEDTLS_PSA_CRYPTO_C) /* MBEDTLS_xxx influences PSA_WANT_xxx */
-#include "mbedtls/config_psa.h"
-#endif
 
 #include "mbedtls/check_config.h"
 
