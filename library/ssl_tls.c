@@ -907,7 +907,8 @@ static void ssl_handshake_params_init( mbedtls_ssl_handshake_params *handshake )
     mbedtls_ecdh_init( &handshake->ecdh_ctx );
 #endif
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+/* TODO: Remove defined(MBEDTLS_PSA_CRYPTO_C) after resolving NCSDK-22416 */
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && defined(MBEDTLS_PSA_CRYPTO_C)
     handshake->psa_pake_ctx = psa_pake_operation_init();
     handshake->psa_pake_password = MBEDTLS_SVC_KEY_ID_INIT;
 #else
@@ -1866,7 +1867,8 @@ void mbedtls_ssl_set_verify( mbedtls_ssl_context *ssl,
 /*
  * Set EC J-PAKE password for current handshake
  */
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+/* TODO: Remove defined(MBEDTLS_PSA_CRYPTO_C) after resolving NCSDK-22416 */
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && defined(MBEDTLS_PSA_CRYPTO_C)
 int mbedtls_ssl_set_hs_ecjpake_password( mbedtls_ssl_context *ssl,
                                          const unsigned char *pw,
                                          size_t pw_len )
@@ -4009,7 +4011,8 @@ void mbedtls_ssl_handshake_free( mbedtls_ssl_context *ssl )
 #endif
 
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+/* TODO: Remove defined(MBEDTLS_PSA_CRYPTO_C) after resolving NCSDK-22416 */
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && defined(MBEDTLS_PSA_CRYPTO_C)
     psa_pake_abort( &handshake->psa_pake_ctx );
     psa_destroy_key( handshake->psa_pake_password );
     handshake->psa_pake_password = MBEDTLS_SVC_KEY_ID_INIT;
@@ -6240,7 +6243,8 @@ static int ssl_compute_master( mbedtls_ssl_handshake_params *handshake,
     else
 #endif
     {
-#if defined(MBEDTLS_USE_PSA_CRYPTO) &&                              \
+/* TODO: Remove defined(MBEDTLS_PSA_CRYPTO_C) after resolving NCSDK-22416 */
+#if defined(MBEDTLS_USE_PSA_CRYPTO)  && defined(MBEDTLS_PSA_CRYPTO_C) && \
     defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
         if( handshake->ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECJPAKE )
         {
@@ -8472,8 +8476,9 @@ end:
     return( ret );
 }
 
+/* TODO: Remove defined(MBEDTLS_PSA_CRYPTO_C) after resolving NCSDK-22416 */
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED) && \
-    defined(MBEDTLS_USE_PSA_CRYPTO)
+    defined(MBEDTLS_USE_PSA_CRYPTO) && defined(MBEDTLS_PSA_CRYPTO_C)
 int mbedtls_psa_ecjpake_read_round(
                                     psa_pake_operation_t *pake_ctx,
                                     const unsigned char *buf,
@@ -9123,7 +9128,8 @@ int mbedtls_ssl_validate_ciphersuite(
 
 #if defined(MBEDTLS_SSL_PROTO_TLS1_2) && defined(MBEDTLS_SSL_CLI_C)
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+/* TODO: Remove defined(MBEDTLS_PSA_CRYPTO_C) after resolving NCSDK-22416 */
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && defined(MBEDTLS_PSA_CRYPTO_C)
     if( suite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECJPAKE &&
         ssl->handshake->psa_pake_ctx_is_ok != 1 )
 #else

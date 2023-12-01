@@ -55,6 +55,14 @@
 #include "mbedtls/ecjpake.h"
 #endif
 
+/* TODO: Remove after solving NCSDK-22416 (Currently not supported in TF-M) */
+#if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)   && \
+    defined(MBEDTLS_USE_PSA_CRYPTO)                 && \
+    !defined(MBEDTLS_PSA_CRYPTO_C)
+#include "mbedtls/ecjpake.h"
+#endif
+/* TODO: End Remove after solving NCSDK-22416 (Currently not supported in TF-M) */
+
 #include "common.h"
 
 /* Shorthand for restartable ECC */
@@ -772,7 +780,7 @@ struct mbedtls_ssl_handshake_params
 #endif /* MBEDTLS_ECDH_C || MBEDTLS_ECDSA_C */
 
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && defined(MBEDTLS_PSA_CRYPTO_C)
     psa_pake_operation_t psa_pake_ctx;        /*!< EC J-PAKE key exchange */
     mbedtls_svc_key_id_t psa_pake_password;
     uint8_t psa_pake_ctx_is_ok;
@@ -2496,7 +2504,7 @@ static inline int psa_ssl_status_to_mbedtls( psa_status_t status )
 #endif /* MBEDTLS_USE_PSA_CRYPTO || MBEDTLS_SSL_PROTO_TLS1_3 */
 
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED) && \
-    defined(MBEDTLS_USE_PSA_CRYPTO)
+    defined(MBEDTLS_USE_PSA_CRYPTO) && defined(MBEDTLS_PSA_CRYPTO_C)
 
 typedef enum {
     MBEDTLS_ECJPAKE_ROUND_ONE,

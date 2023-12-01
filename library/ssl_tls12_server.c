@@ -268,7 +268,8 @@ static int ssl_parse_supported_point_formats( mbedtls_ssl_context *ssl,
             ssl->handshake->ecdh_ctx.point_format = p[0];
 #endif /* !MBEDTLS_USE_PSA_CRYPTO &&
           ( MBEDTLS_ECDH_C || MBEDTLS_ECDSA_C ) */
-#if !defined(MBEDTLS_USE_PSA_CRYPTO) &&                             \
+/* TODO: Remove defined(MBEDTLS_PSA_CRYPTO_C) after resolving NCSDK-22416 */
+#if !defined(MBEDTLS_USE_PSA_CRYPTO) && defined(MBEDTLS_PSA_CRYPTO_C) &&                             \
     defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
             mbedtls_ecjpake_set_point_format( &ssl->handshake->ecjpake_ctx,
                                               p[0] );
@@ -294,7 +295,8 @@ static int ssl_parse_ecjpake_kkpp( mbedtls_ssl_context *ssl,
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
 
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+/* TODO: Remove defined(MBEDTLS_PSA_CRYPTO_C) after resolving NCSDK-22416 */
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && defined(MBEDTLS_PSA_CRYPTO_C)
     if( ssl->handshake->psa_pake_ctx_is_ok != 1 )
 #else
     if( mbedtls_ecjpake_check( &ssl->handshake->ecjpake_ctx ) != 0 )
@@ -304,7 +306,8 @@ static int ssl_parse_ecjpake_kkpp( mbedtls_ssl_context *ssl,
         return( 0 );
     }
 
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+/* TODO: Remove defined(MBEDTLS_PSA_CRYPTO_C) after resolving NCSDK-22416 */
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && defined(MBEDTLS_PSA_CRYPTO_C)
     if( ( ret = mbedtls_psa_ecjpake_read_round(
                         &ssl->handshake->psa_pake_ctx, buf, len,
                         MBEDTLS_ECJPAKE_ROUND_ONE ) ) != 0 )
@@ -2013,7 +2016,8 @@ static void ssl_write_ecjpake_kkpp_ext( mbedtls_ssl_context *ssl,
     MBEDTLS_PUT_UINT16_BE( MBEDTLS_TLS_EXT_ECJPAKE_KKPP, p, 0 );
     p += 2;
 
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+/* TODO: Remove defined(MBEDTLS_PSA_CRYPTO_C) after resolving NCSDK-22416 */
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && defined(MBEDTLS_PSA_CRYPTO_C)
     ret = mbedtls_psa_ecjpake_write_round( &ssl->handshake->psa_pake_ctx,
                                 p + 2, end - p - 2, &kkpp_len,
                                 MBEDTLS_ECJPAKE_ROUND_ONE );
@@ -2843,7 +2847,8 @@ static int ssl_prepare_server_key_exchange( mbedtls_ssl_context *ssl,
     if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECJPAKE )
     {
         int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+/* TODO: Remove defined(MBEDTLS_PSA_CRYPTO_C) after resolving NCSDK-22416 */
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && defined(MBEDTLS_PSA_CRYPTO_C)
         unsigned char *out_p = ssl->out_msg + ssl->out_msglen;
         unsigned char *end_p = ssl->out_msg + MBEDTLS_SSL_OUT_CONTENT_LEN -
                                ssl->out_msglen;
@@ -4120,7 +4125,8 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
     if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECJPAKE )
     {
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+/* TODO: Remove defined(MBEDTLS_PSA_CRYPTO_C) after resolving NCSDK-22416 */
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && defined(MBEDTLS_PSA_CRYPTO_C)
         if( ( ret = mbedtls_psa_ecjpake_read_round(
                         &ssl->handshake->psa_pake_ctx, p, end - p,
                         MBEDTLS_ECJPAKE_ROUND_TWO ) ) != 0 )
