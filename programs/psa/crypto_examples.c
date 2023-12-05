@@ -43,7 +43,7 @@
         }                                                                     \
     } while ( 0 )
 
-#if !defined(MBEDTLS_PSA_CRYPTO_C) || !defined(MBEDTLS_AES_C) || \
+#if !defined(MBEDTLS_PSA_CRYPTO_CLIENT) || !defined(MBEDTLS_AES_C) || \
     !defined(MBEDTLS_CIPHER_MODE_CBC) || !defined(MBEDTLS_CIPHER_MODE_CTR) || \
     !defined(MBEDTLS_CIPHER_MODE_WITH_PADDING) || \
     defined(MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER)

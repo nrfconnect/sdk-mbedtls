@@ -53,7 +53,7 @@
 #include <string.h>
 
 /* If the build options we need are not enabled, compile a placeholder. */
-#if !defined(MBEDTLS_PSA_CRYPTO_C) || \
+#if !defined(MBEDTLS_PSA_CRYPTO_CLIENT) || \
     !defined(MBEDTLS_AES_C) || !defined(MBEDTLS_GCM_C) || \
     !defined(MBEDTLS_CHACHAPOLY_C) || \
     defined(MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER)

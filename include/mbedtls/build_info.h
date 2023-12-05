@@ -87,7 +87,7 @@
  * goes through but psa_export_key() and psa_export_public_key() fail on
  * RSA keys), and pk_parse to work with RSA keys in almost any way.
  */
-#if defined(MBEDTLS_PSA_CRYPTO_C) && defined(MBEDTLS_RSA_C)
+#if defined(MBEDTLS_PSA_CRYPTO_CLIENT) && defined(MBEDTLS_RSA_C)
 #define MBEDTLS_PK_C
 #define MBEDTLS_PK_WRITE_C
 #define MBEDTLS_PK_PARSE_C
@@ -130,7 +130,6 @@
     defined(MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED)
 #define MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_SOME_EPHEMERAL_ENABLED
 #endif
-
 
 #include "mbedtls/check_config.h"
 

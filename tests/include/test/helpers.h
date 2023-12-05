@@ -239,7 +239,7 @@ unsigned char *mbedtls_test_unhexify_alloc( const char *ibuf, size_t *olen );
 int mbedtls_test_hexcmp( uint8_t * a, uint8_t * b,
                          uint32_t a_len, uint32_t b_len );
 
-#if defined(MBEDTLS_PSA_CRYPTO_C) && defined(MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG)
+#if defined(MBEDTLS_PSA_CRYPTO_CLIENT) && defined(MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG)
 #include "test/fake_external_rng_for_test.h"
 #endif
 
