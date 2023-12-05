@@ -137,7 +137,8 @@ static int ssl_write_ecjpake_kkpp_ext( mbedtls_ssl_context *ssl,
     *olen = 0;
 
     /* Skip costly extension if we can't use EC J-PAKE anyway */
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+/* TODO: Remove defined(MBEDTLS_PSA_CRYPTO_C) after resolving NCSDK-22416 */
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && defined(MBEDTLS_PSA_CRYPTO_C)
     if( ssl->handshake->psa_pake_ctx_is_ok != 1 )
         return( 0 );
 #else
@@ -163,7 +164,8 @@ static int ssl_write_ecjpake_kkpp_ext( mbedtls_ssl_context *ssl,
     {
         MBEDTLS_SSL_DEBUG_MSG( 3, ( "generating new ecjpake parameters" ) );
 
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+/* TODO: Remove defined(MBEDTLS_PSA_CRYPTO_C) after resolving NCSDK-22416 */
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && defined(MBEDTLS_PSA_CRYPTO_C)
         ret = mbedtls_psa_ecjpake_write_round(&ssl->handshake->psa_pake_ctx,
                                                 p + 2, end - p - 2, &kkpp_len,
                                                 MBEDTLS_ECJPAKE_ROUND_ONE );
@@ -864,7 +866,8 @@ static int ssl_parse_supported_point_formats_ext( mbedtls_ssl_context *ssl,
             ssl->handshake->ecdh_ctx.point_format = p[0];
 #endif /* !MBEDTLS_USE_PSA_CRYPTO &&
           ( MBEDTLS_ECDH_C || MBEDTLS_ECDSA_C ) */
-#if !defined(MBEDTLS_USE_PSA_CRYPTO) &&                             \
+/* TODO: Remove defined(MBEDTLS_PSA_CRYPTO_C) after resolving NCSDK-22416 */
+#if !defined(MBEDTLS_USE_PSA_CRYPTO) && defined(MBEDTLS_PSA_CRYPTO_C) &&                             \
     defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
             mbedtls_ecjpake_set_point_format( &ssl->handshake->ecjpake_ctx,
                                               p[0] );
@@ -905,7 +908,8 @@ static int ssl_parse_ecjpake_kkpp( mbedtls_ssl_context *ssl,
     ssl->handshake->ecjpake_cache = NULL;
     ssl->handshake->ecjpake_cache_len = 0;
 
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+/* TODO: Remove defined(MBEDTLS_PSA_CRYPTO_C) after resolving NCSDK-22416 */
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && defined(MBEDTLS_PSA_CRYPTO_C)
     if( ( ret = mbedtls_psa_ecjpake_read_round(
                             &ssl->handshake->psa_pake_ctx, buf, len,
                             MBEDTLS_ECJPAKE_ROUND_ONE ) ) != 0 )
@@ -2331,7 +2335,8 @@ start_processing:
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
     if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECJPAKE )
     {
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+/* TODO: Remove defined(MBEDTLS_PSA_CRYPTO_C) after resolving NCSDK-22416 */
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && defined(MBEDTLS_PSA_CRYPTO_C)
         /*
          * The first 3 bytes are:
          * [0] MBEDTLS_ECP_TLS_NAMED_CURVE
@@ -3304,7 +3309,8 @@ ecdh_calc_secret:
     {
         header_len = 4;
 
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+/* TODO: Remove defined(MBEDTLS_PSA_CRYPTO_C) after resolving NCSDK-22416 */
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && defined(MBEDTLS_PSA_CRYPTO_C)
         unsigned char *out_p = ssl->out_msg + header_len;
         unsigned char *end_p = ssl->out_msg + MBEDTLS_SSL_OUT_CONTENT_LEN -
                                header_len;

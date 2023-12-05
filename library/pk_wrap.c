@@ -60,7 +60,8 @@
 #include <limits.h>
 #include <stdint.h>
 
-#if defined(MBEDTLS_PSA_CRYPTO_C)
+#if defined(MBEDTLS_PSA_CRYPTO_CLIENT)
+
 int mbedtls_pk_error_from_psa( psa_status_t status )
 {
     switch( status )
@@ -96,7 +97,8 @@ int mbedtls_pk_error_from_psa( psa_status_t status )
 }
 
 #if defined(PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY) ||    \
-    defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR)
+    defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR) || \
+    defined(MBEDTLS_RSA_C)
 int mbedtls_pk_error_from_psa_rsa( psa_status_t status )
 {
     switch( status )
@@ -117,7 +119,8 @@ int mbedtls_pk_error_from_psa_rsa( psa_status_t status )
             return( mbedtls_pk_error_from_psa( status ) );
     }
 }
-#endif /* PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY || PSA_WANT_KEY_TYPE_RSA_KEY_PAIR */
+#endif /* PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY || PSA_WANT_KEY_TYPE_RSA_KEY_PAIR ||
+          MBEDTLS_RSA_C */
 
 #endif /* MBEDTLS_PSA_CRYPTO_C */
 
@@ -160,7 +163,8 @@ static size_t rsa_get_bitlen( const void *ctx )
     return( 8 * mbedtls_rsa_get_len( rsa ) );
 }
 
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && \
+    (defined(PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY) || defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR))
 static int rsa_verify_wrap( void *ctx, mbedtls_md_type_t md_alg,
                    const unsigned char *hash, size_t hash_len,
                    const unsigned char *sig, size_t sig_len )
@@ -256,7 +260,8 @@ static int rsa_verify_wrap( void *ctx, mbedtls_md_type_t md_alg,
 }
 #endif
 
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && \
+    (defined(PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY) || defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR))
 int  mbedtls_pk_psa_rsa_sign_ext( psa_algorithm_t alg,
                                   mbedtls_rsa_context *rsa_ctx,
                                   const unsigned char *hash, size_t hash_len,
@@ -313,7 +318,8 @@ cleanup:
 }
 #endif /* MBEDTLS_PSA_CRYPTO_C */
 
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && \
+    (defined(PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY) || defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR))
 static int rsa_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
                    const unsigned char *hash, size_t hash_len,
                    unsigned char *sig, size_t sig_size, size_t *sig_len,
@@ -355,7 +361,8 @@ static int rsa_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
 }
 #endif
 
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && \
+    (defined(PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY) || defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR))
 static int rsa_decrypt_wrap( void *ctx,
                     const unsigned char *input, size_t ilen,
                     unsigned char *output, size_t *olen, size_t osize,
@@ -438,7 +445,8 @@ static int rsa_decrypt_wrap( void *ctx,
 }
 #endif
 
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && \
+    (defined(PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY) || defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR))
 static int rsa_encrypt_wrap( void *ctx,
                     const unsigned char *input, size_t ilen,
                     unsigned char *output, size_t *olen, size_t osize,
@@ -1557,11 +1565,12 @@ static int pk_opaque_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
             return( mbedtls_pk_error_from_psa_ecdsa( status ) );
         else
 #endif /* MBEDTLS_ECDSA_C */
-#if defined(MBEDTLS_RSA_C)
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && \
+    (defined(PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY) || defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR))
         if( PSA_KEY_TYPE_IS_RSA( type ) )
             return( mbedtls_pk_error_from_psa_rsa( status ) );
         else
-#endif /* MBEDTLS_RSA_C */
+#endif
             return( mbedtls_pk_error_from_psa( status ) );
     }
 
@@ -1624,6 +1633,7 @@ static int pk_opaque_rsa_decrypt( void *ctx,
 }
 #endif /* PSA_WANT_KEY_TYPE_RSA_KEY_PAIR */
 
+#if (defined(PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY) || defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR))
 const mbedtls_pk_info_t mbedtls_pk_rsa_opaque_info = {
     MBEDTLS_PK_OPAQUE,
     "Opaque",
@@ -1650,6 +1660,7 @@ const mbedtls_pk_info_t mbedtls_pk_rsa_opaque_info = {
 #endif
     NULL, /* debug - could be done later, or even left NULL */
 };
+#endif /* (defined(PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY) || defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR)) */
 
 #endif /* MBEDTLS_USE_PSA_CRYPTO */
 

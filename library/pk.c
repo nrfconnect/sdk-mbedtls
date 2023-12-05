@@ -39,7 +39,7 @@
 #include "mbedtls/ecdsa.h"
 #endif
 
-#if defined(MBEDTLS_PSA_CRYPTO_C)
+#if defined(MBEDTLS_PSA_CRYPTO_CLIENT)
 #include "mbedtls/psa_util.h"
 #endif
 
@@ -296,7 +296,10 @@ int mbedtls_pk_can_do_ext( const mbedtls_pk_context *ctx, psa_algorithm_t alg,
 
     const mbedtls_svc_key_id_t *key = (const mbedtls_svc_key_id_t *) ctx->pk_ctx;
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_algorithm_t key_alg, key_alg2;
+    psa_algorithm_t key_alg;
+#if !defined(MBEDTLS_REMOVE_KEY_ENROLLMENT_WRAP)
+    psa_algorithm_t key_alg2; 
+#endif /* Fill in */
     psa_status_t status;
 
     status = psa_get_key_attributes( *key, &attributes );
@@ -304,7 +307,9 @@ int mbedtls_pk_can_do_ext( const mbedtls_pk_context *ctx, psa_algorithm_t alg,
         return( 0 );
 
     key_alg = psa_get_key_algorithm( &attributes );
+#if !defined(MBEDTLS_REMOVE_KEY_ENROLLMENT_WRAP)
     key_alg2 = psa_get_key_enrollment_algorithm( &attributes );
+#endif /* fill in */
     key_usage = psa_get_key_usage_flags( &attributes );
     psa_reset_key_attributes( &attributes );
 
@@ -318,7 +323,11 @@ int mbedtls_pk_can_do_ext( const mbedtls_pk_context *ctx, psa_algorithm_t alg,
      * This would also match ECDSA/RSA_PKCS1V15_SIGN/RSA_PSS with
      * a fixed hash on key_alg/key_alg2.
      */
+#if defined(MBEDTLS_REMOVE_KEY_ENROLLMENT_WRAP)
+    if (alg == key_alg)
+#else
     if( alg == key_alg || alg == key_alg2 )
+#endif /* Fill in */
             return( 1 );
 
     /*
@@ -334,10 +343,12 @@ int mbedtls_pk_can_do_ext( const mbedtls_pk_context *ctx, psa_algorithm_t alg,
             ( alg & ~PSA_ALG_HASH_MASK ) == ( key_alg & ~PSA_ALG_HASH_MASK ) )
             return( 1 );
 
+#if !defined(MBEDTLS_REMOVE_KEY_ENROLLMENT_WRAP)
         if( PSA_ALG_IS_SIGN_HASH( key_alg2 ) &&
             PSA_ALG_SIGN_GET_HASH( key_alg2 ) == PSA_ALG_ANY_HASH &&
             ( alg & ~PSA_ALG_HASH_MASK ) == ( key_alg2 & ~PSA_ALG_HASH_MASK ) )
             return( 1 );
+#endif /* Fill in */
     }
 
     return( 0 );
@@ -481,7 +492,8 @@ int mbedtls_pk_verify_ext( mbedtls_pk_type_t type, const void *options,
 
     pss_opts = (const mbedtls_pk_rsassa_pss_options *) options;
 
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && \
+    (defined(PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY) || defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR))
     if( pss_opts->mgf1_hash_id == md_alg &&
         ( (size_t) pss_opts->expected_salt_len == hash_len ||
             pss_opts->expected_salt_len  == MBEDTLS_RSA_SALT_LEN_ANY ) )
@@ -626,7 +638,7 @@ int mbedtls_pk_sign( mbedtls_pk_context *ctx, mbedtls_md_type_t md_alg,
                                          f_rng, p_rng, NULL ) );
 }
 
-#if defined(MBEDTLS_PSA_CRYPTO_C)
+#if defined(MBEDTLS_PSA_CRYPTO_CLIENT)
 /*
  * Make a signature given a signature type.
  */
@@ -801,7 +813,7 @@ mbedtls_pk_type_t mbedtls_pk_get_type( const mbedtls_pk_context *ctx )
     return( ctx->pk_info->type );
 }
 
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
+#if defined(MBEDTLS_USE_PSA_CRYPTO) && !defined(MBEDTLS_REMOVE_KEY_ENROLLMENT_WRAP)
 /*
  * Load the key to a PSA key slot,
  * then turn the PK context into a wrapper for that key slot.
@@ -848,8 +860,11 @@ int mbedtls_pk_wrap_as_opaque( mbedtls_pk_context *pk,
         psa_set_key_bits( &attributes, bits );
         psa_set_key_usage_flags( &attributes, usage );
         psa_set_key_algorithm( &attributes, alg );
+
+#if !defined(MBEDTLS_REMOVE_KEY_ENROLLMENT_WRAP)
         if( alg2 != PSA_ALG_NONE )
             psa_set_key_enrollment_algorithm( &attributes, alg2 );
+#endif
 
         /* import private key into PSA */
         status = psa_import_key( &attributes, d, d_len, key );
@@ -882,8 +897,10 @@ int mbedtls_pk_wrap_as_opaque( mbedtls_pk_context *pk,
         psa_set_key_bits( &attributes, mbedtls_pk_get_bitlen( pk ) );
         psa_set_key_usage_flags( &attributes, usage );
         psa_set_key_algorithm( &attributes, alg );
+#if !defined(MBEDTLS_REMOVE_KEY_ENROLLMENT_WRAP)
         if( alg2 != PSA_ALG_NONE )
             psa_set_key_enrollment_algorithm( &attributes, alg2 );
+#endif
 
         /* import private key into PSA */
         status = psa_import_key( &attributes,

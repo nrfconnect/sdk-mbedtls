@@ -40,10 +40,10 @@
  * Maximum size of a hash based on configuration.
  */
 #if defined(MBEDTLS_MD_C) && ( \
-    !defined(MBEDTLS_PSA_CRYPTO_C) || \
+    !defined(MBEDTLS_PSA_CRYPTO_CLIENT) || \
     MBEDTLS_MD_MAX_SIZE >= PSA_HASH_MAX_SIZE )
 #define MBEDTLS_HASH_MAX_SIZE MBEDTLS_MD_MAX_SIZE
-#elif defined(MBEDTLS_PSA_CRYPTO_C) && ( \
+#elif defined(MBEDTLS_PSA_CRYPTO_CLIENT) && ( \
     !defined(MBEDTLS_MD_C) || \
     PSA_HASH_MAX_SIZE >= MBEDTLS_MD_MAX_SIZE )
 #define MBEDTLS_HASH_MAX_SIZE PSA_HASH_MAX_SIZE
