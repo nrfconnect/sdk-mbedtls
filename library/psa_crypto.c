@@ -2365,21 +2365,12 @@ static psa_status_t psa_mac_setup( psa_mac_operation_t *operation,
         status = PSA_ERROR_BAD_STATE;
         goto exit;
     }
+
     status = psa_get_and_lock_key_slot_with_policy(
                  key,
                  &slot,
                  is_sign ? PSA_KEY_USAGE_SIGN_MESSAGE : PSA_KEY_USAGE_VERIFY_MESSAGE,
                  alg );
-    if( status == PSA_ERROR_NOT_PERMITTED )
-    {
-        /* Try with the other option (using sign/verify message) */
-        status = psa_get_and_lock_key_slot_with_policy(
-                    key,
-                    &slot,
-                    is_sign ? PSA_KEY_USAGE_SIGN_MESSAGE : PSA_KEY_USAGE_VERIFY_MESSAGE,
-                    alg );
-    }
-
     if( status != PSA_SUCCESS )
         goto exit;
 
@@ -2565,18 +2556,8 @@ static psa_status_t psa_mac_compute_internal( mbedtls_svc_key_id_t key,
     status = psa_get_and_lock_key_slot_with_policy(
                  key,
                  &slot,
-                 is_sign ? PSA_KEY_USAGE_SIGN_HASH : PSA_KEY_USAGE_VERIFY_HASH,
+                 is_sign ? PSA_KEY_USAGE_SIGN_MESSAGE : PSA_KEY_USAGE_VERIFY_MESSAGE,
                  alg );
-    if( status == PSA_ERROR_NOT_PERMITTED )
-    {
-        /* Try with the other option (using sign/verify message) */
-        status = psa_get_and_lock_key_slot_with_policy(
-                    key,
-                    &slot,
-                    is_sign ? PSA_KEY_USAGE_SIGN_MESSAGE : PSA_KEY_USAGE_VERIFY_MESSAGE,
-                    alg );
-    }
-
     if( status != PSA_SUCCESS )
         goto exit;
 
