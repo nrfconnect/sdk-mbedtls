@@ -1500,9 +1500,6 @@ int mbedtls_ssl_tls13_read_public_ecdhe_share( mbedtls_ssl_context *ssl,
     MBEDTLS_SSL_CHK_BUF_READ_PTR( p, end, peerkey_len );
 
     /* Store peer's ECDH public key. */
-    if (peerkey_len > sizeof(handshake->ecdh_psa_peerkey)) {
-        return MBEDTLS_ERR_SSL_HANDSHAKE_FAILURE;
-    }
     memcpy( handshake->ecdh_psa_peerkey, p, peerkey_len );
     handshake->ecdh_psa_peerkey_len = peerkey_len;
 
