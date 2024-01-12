@@ -339,43 +339,20 @@ typedef uint16_t psa_key_attributes_flag_t;
 #define MBEDTLS_PSA_KA_MASK_DUAL_USE (          \
         0 )
 
-/* Only used when the key id doesn't encode the owners id, to fill the reserved
- * field in psa_core_key_attributes_t
-*/
-#define MBEDTLS_KEY_ATTRIBUTE_RESERVED_INIT (int32_t) 0
-
 typedef struct
 {
     psa_key_type_t MBEDTLS_PRIVATE(type);
     psa_key_bits_t MBEDTLS_PRIVATE(bits);
     psa_key_lifetime_t MBEDTLS_PRIVATE(lifetime);
     mbedtls_svc_key_id_t MBEDTLS_PRIVATE(id);
-/* This ensures that size of struct doesn't change size depending on setting
- * MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
- */
-#if !defined(MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER)
-    int32_t  MBEDTLS_PRIVATE(reserved);
-#endif /* !MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER */
     psa_key_policy_t MBEDTLS_PRIVATE(policy);
     psa_key_attributes_flag_t MBEDTLS_PRIVATE(flags);
 } psa_core_key_attributes_t;
 
-/* Changing MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER changes the size
- * of psa_core_key_attributes_t, which can lead to incompatibilties.
- * This provides a compatible version of initialisation.
- */
-#if defined(MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER)
 #define PSA_CORE_KEY_ATTRIBUTES_INIT { PSA_KEY_TYPE_NONE, 0,            \
                                        PSA_KEY_LIFETIME_VOLATILE,       \
                                        MBEDTLS_SVC_KEY_ID_INIT,         \
                                        PSA_KEY_POLICY_INIT, 0 }
-#else
-#define PSA_CORE_KEY_ATTRIBUTES_INIT { PSA_KEY_TYPE_NONE, 0,                \
-                                       PSA_KEY_LIFETIME_VOLATILE,           \
-                                       MBEDTLS_SVC_KEY_ID_INIT,             \
-                                       MBEDTLS_KEY_ATTRIBUTE_RESERVED_INIT, \
-                                       PSA_KEY_POLICY_INIT, 0 }
-#endif /* !MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER */
 
 struct psa_key_attributes_s
 {
