@@ -1873,23 +1873,16 @@ int mbedtls_ssl_set_hs_ecjpake_password( mbedtls_ssl_context *ssl,
 {
     psa_pake_cipher_suite_t cipher_suite = psa_pake_cipher_suite_init();
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-    const uint8_t *user = NULL;
-    const uint8_t *peer = NULL;
+    psa_pake_role_t psa_role;
     psa_status_t status;
 
     if( ssl->handshake == NULL || ssl->conf == NULL )
         return( MBEDTLS_ERR_SSL_BAD_INPUT_DATA );
 
     if( ssl->conf->endpoint == MBEDTLS_SSL_IS_SERVER )
-    {
-        user = (const uint8_t *)"server";
-        peer = (const uint8_t *)"client";
-    }
+        psa_role = PSA_PAKE_ROLE_SERVER;
     else
-    {
-        user = (const uint8_t *)"client";
-        peer = (const uint8_t *)"server";
-    }
+        psa_role = PSA_PAKE_ROLE_CLIENT;
 
     /* Empty password is not valid  */
     if( ( pw == NULL) || ( pw_len == 0 ) )
@@ -1918,7 +1911,7 @@ int mbedtls_ssl_set_hs_ecjpake_password( mbedtls_ssl_context *ssl,
         return( MBEDTLS_ERR_SSL_HW_ACCEL_FAILED );
     }
 
-    status = psa_pake_set_user(&ssl->handshake->psa_pake_ctx, user, strlen(user));
+    status = psa_pake_set_role( &ssl->handshake->psa_pake_ctx, psa_role );
     if( status != PSA_SUCCESS )
     {
         psa_destroy_key( ssl->handshake->psa_pake_password );
@@ -1926,16 +1919,8 @@ int mbedtls_ssl_set_hs_ecjpake_password( mbedtls_ssl_context *ssl,
         return( MBEDTLS_ERR_SSL_HW_ACCEL_FAILED );
     }
 
-    status = psa_pake_set_peer(&ssl->handshake->psa_pake_ctx, peer, strlen(peer));
-    if( status != PSA_SUCCESS )
-    {
-        psa_destroy_key( ssl->handshake->psa_pake_password );
-        psa_pake_abort( &ssl->handshake->psa_pake_ctx );
-        return( MBEDTLS_ERR_SSL_HW_ACCEL_FAILED );
-    }
-
-    status = psa_pake_set_password_key( &ssl->handshake->psa_pake_ctx,
-                                         ssl->handshake->psa_pake_password );
+    psa_pake_set_password_key( &ssl->handshake->psa_pake_ctx,
+                                ssl->handshake->psa_pake_password );
     if( status != PSA_SUCCESS )
     {
         psa_destroy_key( ssl->handshake->psa_pake_password );
