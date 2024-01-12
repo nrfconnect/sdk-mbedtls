@@ -1330,16 +1330,8 @@ int mbedtls_ssl_decrypt_buf( mbedtls_ssl_context const *ssl,
 #if defined(MBEDTLS_SSL_SOME_SUITES_USE_STREAM)
     if( ssl_mode == MBEDTLS_SSL_MODE_STREAM )
     {
-        if (rec->data_len < transform->maclen) {
-            MBEDTLS_SSL_DEBUG_MSG(1,
-                                  ("Record too short for MAC:"
-                                   " %" MBEDTLS_PRINTF_SIZET " < %" MBEDTLS_PRINTF_SIZET,
-                                   rec->data_len, transform->maclen));
-            return MBEDTLS_ERR_SSL_INVALID_MAC;
-        }
-
         /* The only supported stream cipher is "NULL",
-         * so there's no encryption to do here.*/
+         * so there's nothing to do here.*/
     }
     else
 #endif /* MBEDTLS_SSL_SOME_SUITES_USE_STREAM */
