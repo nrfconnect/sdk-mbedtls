@@ -15,8 +15,11 @@
 # limitations under the License.
 
 from abc import abstractmethod
+import enum
 from typing import Iterator, List, Tuple, TypeVar, Any
+from copy import deepcopy
 from itertools import chain
+from math import ceil
 
 from . import test_case
 from . import test_data_generation
@@ -39,6 +42,11 @@ def invmod(a: int, n: int) -> int:
         return b
     raise ValueError("Not invertible")
 
+def invmod_positive(a: int, n: int) -> int:
+    """Return a non-negative inverse of a to modulo n."""
+    inv = invmod(a, n)
+    return inv if inv >= 0 else inv + n
+
 def hex_to_int(val: str) -> int:
     """Implement the syntax accepted by mbedtls_test_read_mpi().
 
@@ -48,7 +56,7 @@ def hex_to_int(val: str) -> int:
         return 0
     return int(val, 16)
 
-def quote_str(val) -> str:
+def quote_str(val: str) -> str:
     return "\"{}\"".format(val)
 
 def bound_mpi(val: int, bits_in_limb: int) -> int:
@@ -62,11 +70,38 @@ def bound_mpi_limbs(limbs: int, bits_in_limb: int) -> int:
 
 def limbs_mpi(val: int, bits_in_limb: int) -> int:
     """Return the number of limbs required to store value."""
-    return (val.bit_length() + bits_in_limb - 1) // bits_in_limb
+    bit_length = max(val.bit_length(), 1)
+    return (bit_length + bits_in_limb - 1) // bits_in_limb
 
 def combination_pairs(values: List[T]) -> List[Tuple[T, T]]:
     """Return all pair combinations from input values."""
     return [(x, y) for x in values for y in values]
+
+def bits_to_limbs(bits: int, bits_in_limb: int) -> int:
+    """ Return the appropriate ammount of limbs needed to store
+        a number contained in input bits"""
+    return ceil(bits / bits_in_limb)
+
+def hex_digits_for_limb(limbs: int, bits_in_limb: int) -> int:
+    """ Return the hex digits need for a number of limbs. """
+    return 2 * ((limbs * bits_in_limb) // 8)
+
+def hex_digits_max_int(val: str, bits_in_limb: int) -> int:
+    """ Return the first number exceeding maximum  the limb space
+    required to store the input hex-string value. This method
+    weights on the input str_len rather than numerical value
+    and works with zero-padded inputs"""
+    n = ((1 << (len(val) * 4)) - 1)
+    l = limbs_mpi(n, bits_in_limb)
+    return bound_mpi_limbs(l, bits_in_limb)
+
+def zfill_match(reference: str, target: str) -> str:
+    """ Zero pad target hex-string to match the limb size of
+    the reference input """
+    lt = len(target)
+    lr = len(reference)
+    target_len = lr if lt < lr else lt
+    return "{:x}".format(int(target, 16)).zfill(target_len)
 
 class OperationCommon(test_data_generation.BaseTest):
     """Common features for bignum binary operations.
@@ -93,12 +128,14 @@ class OperationCommon(test_data_generation.BaseTest):
     symbol = ""
     input_values = INPUTS_DEFAULT # type: List[str]
     input_cases = [] # type: List[Any]
+    dependencies = [] # type: List[Any]
     unique_combinations_only = False
     input_styles = ["variable", "fixed", "arch_split"] # type: List[str]
     input_style = "variable" # type: str
     limb_sizes = [32, 64] # type: List[int]
     arities = [1, 2]
     arity = 2
+    suffix = False   # for arity = 1, symbol can be prefix (default) or suffix
 
     def __init__(self, val_a: str, val_b: str = "0", bits_in_limb: int = 32) -> None:
         self.val_a = val_a
@@ -107,10 +144,11 @@ class OperationCommon(test_data_generation.BaseTest):
         # provides earlier/more robust input validation.
         self.int_a = hex_to_int(val_a)
         self.int_b = hex_to_int(val_b)
+        self.dependencies = deepcopy(self.dependencies)
         if bits_in_limb not in self.limb_sizes:
             raise ValueError("Invalid number of bits in limb!")
         if self.input_style == "arch_split":
-            self.dependencies = ["MBEDTLS_HAVE_INT{:d}".format(bits_in_limb)]
+            self.dependencies.append("MBEDTLS_HAVE_INT{:d}".format(bits_in_limb))
         self.bits_in_limb = bits_in_limb
 
     @property
@@ -131,9 +169,9 @@ class OperationCommon(test_data_generation.BaseTest):
 
     @property
     def hex_digits(self) -> int:
-        return 2 * (self.limbs * self.bits_in_limb // 8)
+        return hex_digits_for_limb(self.limbs, self.bits_in_limb)
 
-    def format_arg(self, val) -> str:
+    def format_arg(self, val: str) -> str:
         if self.input_style not in self.input_styles:
             raise ValueError("Unknown input style!")
         if self.input_style == "variable":
@@ -141,7 +179,7 @@ class OperationCommon(test_data_generation.BaseTest):
         else:
             return val.zfill(self.hex_digits)
 
-    def format_result(self, res) -> str:
+    def format_result(self, res: int) -> str:
         res_str = '{:x}'.format(res)
         return quote_str(self.format_arg(res_str))
 
@@ -170,7 +208,8 @@ class OperationCommon(test_data_generation.BaseTest):
         """
         if not self.case_description:
             if self.arity == 1:
-                self.case_description = "{} {:x}".format(
+                format_string = "{1:x} {0}" if self.suffix else "{0} {1:x}"
+                self.case_description = format_string.format(
                     self.symbol, self.int_a
                 )
             elif self.arity == 2:
@@ -238,10 +277,29 @@ class OperationCommon(test_data_generation.BaseTest):
                     )
 
 
+class ModulusRepresentation(enum.Enum):
+    """Representation selector of a modulus."""
+    # Numerical values aligned with the type mbedtls_mpi_mod_rep_selector
+    INVALID = 0
+    MONTGOMERY = 2
+    OPT_RED = 3
+
+    def symbol(self) -> str:
+        """The C symbol for this representation selector."""
+        return 'MBEDTLS_MPI_MOD_REP_' + self.name
+
+    @classmethod
+    def supported_representations(cls) -> List['ModulusRepresentation']:
+        """Return all representations that are supported in positive test cases."""
+        return [cls.MONTGOMERY, cls.OPT_RED]
+
+
 class ModOperationCommon(OperationCommon):
     #pylint: disable=abstract-method
     """Target for bignum mod_raw test case generation."""
     moduli = MODULI_DEFAULT # type: List[str]
+    montgomery_form_a = False
+    disallow_zero_a = False
 
     def __init__(self, val_n: str, val_a: str, val_b: str = "0",
                  bits_in_limb: int = 64) -> None:
@@ -257,13 +315,35 @@ class ModOperationCommon(OperationCommon):
     def from_montgomery(self, val: int) -> int:
         return (val * self.r_inv) % self.int_n
 
+    def convert_from_canonical(self, canonical: int,
+                               rep: ModulusRepresentation) -> int:
+        """Convert values from canonical representation to the given representation."""
+        if rep is ModulusRepresentation.MONTGOMERY:
+            return self.to_montgomery(canonical)
+        elif rep is ModulusRepresentation.OPT_RED:
+            return canonical
+        else:
+            raise ValueError('Modulus representation not supported: {}'
+                             .format(rep.name))
+
     @property
     def boundary(self) -> int:
         return self.int_n
 
     @property
+    def arg_a(self) -> str:
+        if self.montgomery_form_a:
+            value_a = self.to_montgomery(self.int_a)
+        else:
+            value_a = self.int_a
+        return self.format_arg('{:x}'.format(value_a))
+
+    @property
     def arg_n(self) -> str:
         return self.format_arg(self.val_n)
+
+    def format_arg(self, val: str) -> str:
+        return super().format_arg(val).zfill(self.hex_digits)
 
     def arguments(self) -> List[str]:
         return [quote_str(self.arg_n)] + super().arguments()
@@ -284,6 +364,8 @@ class ModOperationCommon(OperationCommon):
     @property
     def is_valid(self) -> bool:
         if self.int_a >= self.int_n:
+            return False
+        if self.disallow_zero_a and self.int_a == 0:
             return False
         if self.arity == 2 and self.int_b >= self.int_n:
             return False
@@ -333,43 +415,3 @@ class ModOperationCommon(OperationCommon):
                         lambda test_object: test_object.is_valid,
                         chain(test_objects, special_cases)
                         ))
-
-# BEGIN MERGE SLOT 1
-
-# END MERGE SLOT 1
-
-# BEGIN MERGE SLOT 2
-
-# END MERGE SLOT 2
-
-# BEGIN MERGE SLOT 3
-
-# END MERGE SLOT 3
-
-# BEGIN MERGE SLOT 4
-
-# END MERGE SLOT 4
-
-# BEGIN MERGE SLOT 5
-
-# END MERGE SLOT 5
-
-# BEGIN MERGE SLOT 6
-
-# END MERGE SLOT 6
-
-# BEGIN MERGE SLOT 7
-
-# END MERGE SLOT 7
-
-# BEGIN MERGE SLOT 8
-
-# END MERGE SLOT 8
-
-# BEGIN MERGE SLOT 9
-
-# END MERGE SLOT 9
-
-# BEGIN MERGE SLOT 10
-
-# END MERGE SLOT 10

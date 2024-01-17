@@ -37,13 +37,13 @@
 #define MBEDTLS_HAVE_ASM
 #define MBEDTLS_HAVE_TIME
 
-/* mbed TLS feature support */
+/* Mbed TLS feature support */
 #define MBEDTLS_ECP_DP_SECP256R1_ENABLED
 #define MBEDTLS_ECP_DP_SECP384R1_ENABLED
 #define MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
 #define MBEDTLS_SSL_PROTO_TLS1_2
 
-/* mbed TLS modules */
+/* Mbed TLS modules */
 #define MBEDTLS_AES_C
 #define MBEDTLS_ASN1_PARSE_C
 #define MBEDTLS_ASN1_WRITE_C
@@ -60,10 +60,6 @@
 #define MBEDTLS_OID_C
 #define MBEDTLS_PK_C
 #define MBEDTLS_PK_PARSE_C
-/* The library does not currently support enabling SHA-224 without SHA-256.
- * A future version of the library will have this option disabled
- * by default. */
-#define MBEDTLS_SHA224_C
 #define MBEDTLS_SHA256_C
 #define MBEDTLS_SHA384_C
 #define MBEDTLS_SHA512_C
