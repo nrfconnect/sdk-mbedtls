@@ -237,18 +237,14 @@ typedef struct mbedtls_md_context_t {
     /** Information about the associated message digest. */
     const mbedtls_md_info_t *MBEDTLS_PRIVATE(md_info);
 
-#if defined(MBEDTLS_MD_SOME_PSA)
     /** Are hash operations dispatched to PSA or legacy? */
     mbedtls_md_engine_t MBEDTLS_PRIVATE(engine);
-#endif
 
     /** The digest-specific context (legacy) or the PSA operation. */
     void *MBEDTLS_PRIVATE(md_ctx);
 
-#if defined(MBEDTLS_MD_C)
     /** The HMAC part of the context. */
     void *MBEDTLS_PRIVATE(hmac_ctx);
-#endif
 } mbedtls_md_context_t;
 
 /**
