@@ -325,13 +325,11 @@ typedef struct mbedtls_cipher_context_t {
      */
     mbedtls_operation_t MBEDTLS_PRIVATE(operation);
 
-#if defined(MBEDTLS_CIPHER_MODE_WITH_PADDING)
     /** Padding functions to use, if relevant for
      * the specific cipher mode.
      */
     void(*MBEDTLS_PRIVATE(add_padding))(unsigned char *output, size_t olen, size_t data_len);
     int(*MBEDTLS_PRIVATE(get_padding))(unsigned char *input, size_t ilen, size_t *data_len);
-#endif
 
     /** Buffer for input that has not been processed yet. */
     unsigned char MBEDTLS_PRIVATE(unprocessed_data)[MBEDTLS_MAX_BLOCK_LENGTH];
@@ -349,10 +347,8 @@ typedef struct mbedtls_cipher_context_t {
     /** The cipher-specific context. */
     void *MBEDTLS_PRIVATE(cipher_ctx);
 
-#if defined(MBEDTLS_CMAC_C)
     /** CMAC-specific context. */
     mbedtls_cmac_context_t *MBEDTLS_PRIVATE(cmac_ctx);
-#endif
 
 #if defined(MBEDTLS_USE_PSA_CRYPTO) && !defined(MBEDTLS_DEPRECATED_REMOVED)
     /** Indicates whether the cipher operations should be performed
