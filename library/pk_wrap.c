@@ -717,13 +717,14 @@ static int extract_ecdsa_sig(unsigned char **p, const unsigned char *end,
 /* Common helper for ECDSA verify using PSA functions. */
 static int ecdsa_verify_psa(unsigned char *key, size_t key_len,
                             psa_ecc_family_t curve, size_t curve_bits,
+                            mbedtls_md_type_t md_alg,
                             const unsigned char *hash, size_t hash_len,
                             const unsigned char *sig, size_t sig_len)
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     mbedtls_svc_key_id_t key_id = MBEDTLS_SVC_KEY_ID_INIT;
-    psa_algorithm_t psa_sig_md = PSA_ALG_ECDSA_ANY;
+    psa_algorithm_t psa_sig_md = PSA_ALG_ECDSA(mbedtls_md_psa_alg_from_type(md_alg));
     size_t signature_len = PSA_ECDSA_SIGNATURE_SIZE(curve_bits);
     unsigned char extracted_sig[PSA_VENDOR_ECDSA_SIGNATURE_MAX_SIZE];
     unsigned char *p;
@@ -785,7 +786,6 @@ static int ecdsa_opaque_verify_wrap(mbedtls_pk_context *pk,
                                     const unsigned char *hash, size_t hash_len,
                                     const unsigned char *sig, size_t sig_len)
 {
-    (void) md_alg;
     unsigned char key[MBEDTLS_PK_MAX_EC_PUBKEY_RAW_LEN];
     size_t key_len;
     psa_key_attributes_t key_attr = PSA_KEY_ATTRIBUTES_INIT;
@@ -806,7 +806,7 @@ static int ecdsa_opaque_verify_wrap(mbedtls_pk_context *pk,
         return PSA_PK_ECDSA_TO_MBEDTLS_ERR(status);
     }
 
-    return ecdsa_verify_psa(key, key_len, curve, curve_bits,
+    return ecdsa_verify_psa(key, key_len, curve, curve_bits, md_alg,
                             hash, hash_len, sig, sig_len);
 }
 
@@ -816,12 +816,11 @@ static int ecdsa_verify_wrap(mbedtls_pk_context *pk,
                              const unsigned char *hash, size_t hash_len,
                              const unsigned char *sig, size_t sig_len)
 {
-    (void) md_alg;
     psa_ecc_family_t curve = pk->ec_family;
     size_t curve_bits = pk->ec_bits;
 
     return ecdsa_verify_psa(pk->pub_raw, pk->pub_raw_len, curve, curve_bits,
-                            hash, hash_len, sig, sig_len);
+                            md_alg, hash, hash_len, sig, sig_len);
 }
 #else /* MBEDTLS_PK_USE_PSA_EC_DATA */
 static int ecdsa_verify_wrap(mbedtls_pk_context *pk,
@@ -829,7 +828,6 @@ static int ecdsa_verify_wrap(mbedtls_pk_context *pk,
                              const unsigned char *hash, size_t hash_len,
                              const unsigned char *sig, size_t sig_len)
 {
-    (void) md_alg;
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     mbedtls_ecp_keypair *ctx = pk->pk_ctx;
     unsigned char key[MBEDTLS_PSA_MAX_EC_PUBKEY_LENGTH];
@@ -844,7 +842,7 @@ static int ecdsa_verify_wrap(mbedtls_pk_context *pk,
         return ret;
     }
 
-    return ecdsa_verify_psa(key, key_len, curve, curve_bits,
+    return ecdsa_verify_psa(key, key_len, curve, curve_bits, md_alg,
                             hash, hash_len, sig, sig_len);
 }
 #endif /* MBEDTLS_PK_USE_PSA_EC_DATA */
