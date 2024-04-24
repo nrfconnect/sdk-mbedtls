@@ -30,7 +30,7 @@
 #include "pkwrite.h"
 #endif
 
-#if defined(MBEDTLS_PSA_CRYPTO_C)
+#if defined(MBEDTLS_PSA_CRYPTO_CLIENT)
 #include "psa_util_internal.h"
 #endif
 

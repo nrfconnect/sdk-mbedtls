@@ -28,7 +28,7 @@
 #include "mbedtls/ecdsa.h"
 #endif
 
-#if defined(MBEDTLS_USE_PSA_CRYPTO) || defined(MBEDTLS_PSA_CRYPTO_C)
+#if defined(MBEDTLS_USE_PSA_CRYPTO) || defined(MBEDTLS_PSA_CRYPTO_CLIENT)
 #include "psa/crypto.h"
 #endif
 
@@ -245,7 +245,7 @@ typedef struct mbedtls_pk_context {
      *       MBEDTLS_PK_USE_PSA_EC_DATA (as the public counterpart below) because,
      *       when working with opaque keys, it can be used also in
      *       mbedtls_pk_sign_ext for RSA keys. */
-#if defined(MBEDTLS_PSA_CRYPTO_C)
+#if defined(MBEDTLS_PSA_CRYPTO_CLIENT)
     mbedtls_svc_key_id_t MBEDTLS_PRIVATE(priv_id);      /**< Key ID for opaque keys */
 #endif /* MBEDTLS_PSA_CRYPTO_C */
     /* The following fields are meant for storing the public key in raw format

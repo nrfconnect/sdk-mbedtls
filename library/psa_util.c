@@ -8,7 +8,7 @@
 
 #include "common.h"
 
-#if defined(MBEDTLS_PSA_CRYPTO_C)
+#if defined(MBEDTLS_PSA_CRYPTO_CLIENT)
 
 #include <psa/crypto.h>
 
