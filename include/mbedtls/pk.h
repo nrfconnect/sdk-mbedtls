@@ -16,15 +16,15 @@
 
 #include "mbedtls/md.h"
 
-#if defined(MBEDTLS_RSA_C)
+#if defined(MBEDTLS_RSA_C) || defined(MBEDTLS_USE_PSA_CRYPTO)
 #include "mbedtls/rsa.h"
 #endif
 
-#if defined(MBEDTLS_ECP_C)
+#if defined(MBEDTLS_ECP_C) || defined(MBEDTLS_USE_PSA_CRYPTO)
 #include "mbedtls/ecp.h"
 #endif
 
-#if defined(MBEDTLS_ECDSA_C)
+#if defined(MBEDTLS_ECDSA_C) || defined(MBEDTLS_USE_PSA_CRYPTO)
 #include "mbedtls/ecdsa.h"
 #endif
 
