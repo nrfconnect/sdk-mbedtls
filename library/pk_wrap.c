@@ -18,11 +18,11 @@
 /* Even if RSA not activated, for the sake of RSA-alt */
 #include "mbedtls/rsa.h"
 
-#if defined(MBEDTLS_ECP_C)
+#if defined(MBEDTLS_ECP_C) || defined(MBEDTLS_USE_PSA_CRYPTO)
 #include "mbedtls/ecp.h"
 #endif
 
-#if defined(MBEDTLS_ECDSA_C)
+#if defined(MBEDTLS_ECDSA_C) || defined(MBEDTLS_USE_PSA_CRYPTO)
 #include "mbedtls/ecdsa.h"
 #endif
 
