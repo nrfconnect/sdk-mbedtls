@@ -101,7 +101,7 @@
  */
 
 /* PSA accelerated implementations */
-#if defined(MBEDTLS_PSA_CRYPTO_CLIENT)
+#if defined(MBEDTLS_PSA_CRYPTO_CLIENT) && !defined(CONFIG_MBEDTLS_FORCE_LEGACY_MD)
 
 #if defined(PSA_WANT_ALG_MD5)
 #define MBEDTLS_MD_CAN_MD5
@@ -210,7 +210,7 @@
  * - MBEDTLS_BLOCK_CIPHER_xxx_VIA_LEGACY: xxx key type is supported through
  *   a legacy module (i.e. MBEDTLS_xxx_C)
  */
-#if defined(MBEDTLS_PSA_CRYPTO_CLIENT)
+#if defined(MBEDTLS_PSA_CRYPTO_CLIENT) && !defined(CONFIG_MBEDTLS_FORCE_LEGACY_CIPHER)
 #if defined(PSA_WANT_KEY_TYPE_AES)
 #define MBEDTLS_BLOCK_CIPHER_AES_VIA_PSA
 #define MBEDTLS_BLOCK_CIPHER_SOME_PSA
