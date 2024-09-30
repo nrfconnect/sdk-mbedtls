@@ -37,7 +37,7 @@
  */
 
 /* PSA accelerated implementations */
-#if defined(MBEDTLS_PSA_CRYPTO_CLIENT)
+#if defined(MBEDTLS_PSA_CRYPTO_CLIENT) && !defined(CONFIG_MBEDTLS_FORCE_LEGACY_MD)
 #if defined(PSA_WANT_ALG_MD5)
 #define MBEDTLS_MD_CAN_MD5
 #define MBEDTLS_MD_MD5_VIA_PSA
