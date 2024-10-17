@@ -412,7 +412,7 @@
 
 #if defined(MBEDTLS_LMS_C) &&                                          \
     ! ( defined(MBEDTLS_PSA_CRYPTO_CLIENT) && defined(PSA_WANT_ALG_SHA_256) )
-#error "MBEDTLS_LMS_C requires MBEDTLS_PSA_CRYPTO_CLIENT and PSA_WANT_ALG_SHA_256"
+#error "MBEDTLS_LMS_C requires MBEDTLS_PSA_CRYPTO_C and PSA_WANT_ALG_SHA_256"
 #endif
 
 #if defined(MBEDTLS_LMS_PRIVATE) &&                                    \
