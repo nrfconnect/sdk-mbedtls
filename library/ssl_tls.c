@@ -1960,14 +1960,14 @@ static psa_status_t mbedtls_ssl_set_hs_ecjpake_password_common(
     size_t user_len = 0;
     const uint8_t *peer = NULL;
     size_t peer_len = 0;
-    psa_pake_cs_set_algorithm(&cipher_suite, PSA_ALG_JPAKE(PSA_ALG_SHA_256));
+    psa_pake_cs_set_algorithm(&cipher_suite, PSA_ALG_JPAKE);
     psa_pake_cs_set_primitive(&cipher_suite,
                               PSA_PAKE_PRIMITIVE(PSA_PAKE_PRIMITIVE_TYPE_ECC,
                                                  PSA_ECC_FAMILY_SECP_R1,
                                                  256));
-    psa_pake_cs_set_key_confirmation(&cipher_suite, PSA_PAKE_UNCONFIRMED_KEY);
+    psa_pake_cs_set_hash(&cipher_suite, PSA_ALG_SHA_256);
 
-    status = psa_pake_setup(&ssl->handshake->psa_pake_ctx, pwd ,&cipher_suite);
+    status = psa_pake_setup(&ssl->handshake->psa_pake_ctx, &cipher_suite);
     if (status != PSA_SUCCESS) {
         return status;
     }
@@ -1994,6 +1994,11 @@ static psa_status_t mbedtls_ssl_set_hs_ecjpake_password_common(
         return status;
     }
 
+    status = psa_pake_set_password_key(&ssl->handshake->psa_pake_ctx, pwd);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
     ssl->handshake->psa_pake_ctx_is_ok = 1;
 
     return PSA_SUCCESS;
@@ -2016,7 +2021,7 @@ int mbedtls_ssl_set_hs_ecjpake_password(mbedtls_ssl_context *ssl,
     }
 
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DERIVE);
-    psa_set_key_algorithm(&attributes, PSA_ALG_JPAKE(PSA_ALG_SHA_256));
+    psa_set_key_algorithm(&attributes, PSA_ALG_JPAKE);
     psa_set_key_type(&attributes, PSA_KEY_TYPE_PASSWORD);
 
     status = psa_import_key(&attributes, pw, pw_len,
@@ -7164,23 +7169,12 @@ static int ssl_compute_master(mbedtls_ssl_handshake_params *handshake,
         if (handshake->ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECJPAKE) {
             psa_status_t status;
             psa_algorithm_t alg = PSA_ALG_TLS12_ECJPAKE_TO_PMS;
-            psa_key_id_t key;
-            psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
             psa_key_derivation_operation_t derivation =
                 PSA_KEY_DERIVATION_OPERATION_INIT;
 
             MBEDTLS_SSL_DEBUG_MSG(2, ("perform PSA-based PMS KDF for ECJPAKE"));
 
             handshake->pmslen = PSA_TLS12_ECJPAKE_TO_PMS_DATA_SIZE;
-
-            psa_set_key_type(&attributes, PSA_KEY_TYPE_DERIVE);
-            psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DERIVE);
-            psa_set_key_algorithm(&attributes, alg);
-
-            status = psa_pake_get_shared_key(&handshake->psa_pake_ctx, &attributes, &key);
-            if (status != PSA_SUCCESS) {
-                return MBEDTLS_ERR_SSL_HW_ACCEL_FAILED;
-            }
 
             status = psa_key_derivation_setup(&derivation, alg);
             if (status != PSA_SUCCESS) {
@@ -7194,8 +7188,8 @@ static int ssl_compute_master(mbedtls_ssl_handshake_params *handshake,
                 return MBEDTLS_ERR_SSL_HW_ACCEL_FAILED;
             }
 
-            status = psa_key_derivation_input_key(&derivation, PSA_KEY_DERIVATION_INPUT_SECRET,
-                                                  key);
+            status = psa_pake_get_implicit_key(&handshake->psa_pake_ctx,
+                                               &derivation);
             if (status != PSA_SUCCESS) {
                 psa_key_derivation_abort(&derivation);
                 return MBEDTLS_ERR_SSL_HW_ACCEL_FAILED;
