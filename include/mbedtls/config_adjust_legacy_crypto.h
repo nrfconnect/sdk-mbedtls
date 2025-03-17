@@ -101,63 +101,64 @@
  */
 
 /* PSA accelerated implementations */
-#if defined(MBEDTLS_PSA_CRYPTO_CLIENT)
-#if defined(PSA_WANT_ALG_MD5)
+#if defined(MBEDTLS_PSA_CRYPTO_C)
+
+#if defined(MBEDTLS_PSA_ACCEL_ALG_MD5)
 #define MBEDTLS_MD_CAN_MD5
 #define MBEDTLS_MD_MD5_VIA_PSA
 #define MBEDTLS_MD_SOME_PSA
 #endif
-#if defined(PSA_WANT_ALG_SHA_1)
+#if defined(MBEDTLS_PSA_ACCEL_ALG_SHA_1)
 #define MBEDTLS_MD_CAN_SHA1
 #define MBEDTLS_MD_SHA1_VIA_PSA
 #define MBEDTLS_MD_SOME_PSA
 #endif
-#if defined(PSA_WANT_ALG_SHA_224)
+#if defined(MBEDTLS_PSA_ACCEL_ALG_SHA_224)
 #define MBEDTLS_MD_CAN_SHA224
 #define MBEDTLS_MD_SHA224_VIA_PSA
 #define MBEDTLS_MD_SOME_PSA
 #endif
-#if defined(PSA_WANT_ALG_SHA_256)
+#if defined(MBEDTLS_PSA_ACCEL_ALG_SHA_256)
 #define MBEDTLS_MD_CAN_SHA256
 #define MBEDTLS_MD_SHA256_VIA_PSA
 #define MBEDTLS_MD_SOME_PSA
 #endif
-#if defined(PSA_WANT_ALG_SHA_384)
+#if defined(MBEDTLS_PSA_ACCEL_ALG_SHA_384)
 #define MBEDTLS_MD_CAN_SHA384
 #define MBEDTLS_MD_SHA384_VIA_PSA
 #define MBEDTLS_MD_SOME_PSA
 #endif
-#if defined(PSA_WANT_ALG_SHA_512)
+#if defined(MBEDTLS_PSA_ACCEL_ALG_SHA_512)
 #define MBEDTLS_MD_CAN_SHA512
 #define MBEDTLS_MD_SHA512_VIA_PSA
 #define MBEDTLS_MD_SOME_PSA
 #endif
-#if defined(PSA_WANT_ALG_RIPEMD160)
+#if defined(MBEDTLS_PSA_ACCEL_ALG_RIPEMD160)
 #define MBEDTLS_MD_CAN_RIPEMD160
 #define MBEDTLS_MD_RIPEMD160_VIA_PSA
 #define MBEDTLS_MD_SOME_PSA
 #endif
-#if defined(PSA_WANT_ALG_SHA3_224)
+#if defined(MBEDTLS_PSA_ACCEL_ALG_SHA3_224)
 #define MBEDTLS_MD_CAN_SHA3_224
 #define MBEDTLS_MD_SHA3_224_VIA_PSA
 #define MBEDTLS_MD_SOME_PSA
 #endif
-#if defined(PSA_WANT_ALG_SHA3_256)
+#if defined(MBEDTLS_PSA_ACCEL_ALG_SHA3_256)
 #define MBEDTLS_MD_CAN_SHA3_256
 #define MBEDTLS_MD_SHA3_256_VIA_PSA
 #define MBEDTLS_MD_SOME_PSA
 #endif
-#if defined(PSA_WANT_ALG_SHA3_384)
+#if defined(MBEDTLS_PSA_ACCEL_ALG_SHA3_384)
 #define MBEDTLS_MD_CAN_SHA3_384
 #define MBEDTLS_MD_SHA3_384_VIA_PSA
 #define MBEDTLS_MD_SOME_PSA
 #endif
-#if defined(PSA_WANT_ALG_SHA3_512)
+#if defined(MBEDTLS_PSA_ACCEL_ALG_SHA3_512)
 #define MBEDTLS_MD_CAN_SHA3_512
 #define MBEDTLS_MD_SHA3_512_VIA_PSA
 #define MBEDTLS_MD_SOME_PSA
 #endif
-#endif /* MBEDTLS_PSA_CRYPTO_CLIENT */
+#endif /* MBEDTLS_PSA_CRYPTO_C */
 
 /* Built-in implementations */
 #if defined(MBEDTLS_MD5_C)
@@ -198,7 +199,12 @@
 
 #endif /* MBEDTLS_MD_LIGHT */
 
-/* BLOCK_CIPHER module can dispatch to PSA
+/* BLOCK_CIPHER module can dispatch to PSA when:
+ * - PSA is enabled and drivers have been initialized
+ * - desired key type is supported on the PSA side
+ * If the above conditions are not met, but the legacy support is enabled, then
+ * BLOCK_CIPHER will dynamically fallback to it.
+ *
  * In case BLOCK_CIPHER is defined (see below) the following symbols/helpers
  * can be used to define its capabilities:
  * - MBEDTLS_BLOCK_CIPHER_SOME_PSA: there is at least 1 key type between AES,
@@ -208,20 +214,20 @@
  * - MBEDTLS_BLOCK_CIPHER_xxx_VIA_LEGACY: xxx key type is supported through
  *   a legacy module (i.e. MBEDTLS_xxx_C)
  */
-#if defined(MBEDTLS_PSA_CRYPTO_CLIENT)
-#if defined(PSA_WANT_KEY_TYPE_AES)
+#if defined(MBEDTLS_PSA_CRYPTO_C)
+#if defined(MBEDTLS_PSA_ACCEL_KEY_TYPE_AES)
 #define MBEDTLS_BLOCK_CIPHER_AES_VIA_PSA
 #define MBEDTLS_BLOCK_CIPHER_SOME_PSA
 #endif
-#if defined(PSA_WANT_KEY_TYPE_ARIA)
+#if defined(MBEDTLS_PSA_ACCEL_KEY_TYPE_ARIA)
 #define MBEDTLS_BLOCK_CIPHER_ARIA_VIA_PSA
 #define MBEDTLS_BLOCK_CIPHER_SOME_PSA
 #endif
-#if defined(PSA_WANT_KEY_TYPE_CAMELLIA)
+#if defined(MBEDTLS_PSA_ACCEL_KEY_TYPE_CAMELLIA)
 #define MBEDTLS_BLOCK_CIPHER_CAMELLIA_VIA_PSA
 #define MBEDTLS_BLOCK_CIPHER_SOME_PSA
 #endif
-#endif /* MBEDTLS_PSA_CRYPTO_CLIENT */
+#endif /* MBEDTLS_PSA_CRYPTO_C */
 
 #if defined(MBEDTLS_AES_C)
 #define MBEDTLS_BLOCK_CIPHER_AES_VIA_LEGACY
@@ -422,7 +428,7 @@
 
 /* psa_util file features some ECDSA conversion functions, to convert between
  * legacy's ASN.1 DER format and PSA's raw one. */
-#if defined(MBEDTLS_ECDSA_C) || (defined(MBEDTLS_PSA_CRYPTO_CLIENT) && \
+#if (defined(MBEDTLS_PSA_CRYPTO_CLIENT) && \
     (defined(PSA_WANT_ALG_ECDSA) || defined(PSA_WANT_ALG_DETERMINISTIC_ECDSA)))
 #define MBEDTLS_PSA_UTIL_HAVE_ECDSA
 #endif
