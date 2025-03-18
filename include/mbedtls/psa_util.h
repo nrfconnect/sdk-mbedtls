@@ -13,6 +13,7 @@
 #include "mbedtls/private_access.h"
 
 #include "mbedtls/build_info.h"
+#include "mbedtls/md.h"
 
 #include "psa/crypto.h"
 
