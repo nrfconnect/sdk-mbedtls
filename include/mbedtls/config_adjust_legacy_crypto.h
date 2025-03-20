@@ -199,11 +199,7 @@
 
 #endif /* MBEDTLS_MD_LIGHT */
 
-/* BLOCK_CIPHER module can dispatch to PSA when:
- * - PSA is enabled and drivers have been initialized
- * - desired key type is supported on the PSA side
- * If the above conditions are not met, but the legacy support is enabled, then
- * BLOCK_CIPHER will dynamically fallback to it.
+/* BLOCK_CIPHER module can dispatch to PSA
  *
  * In case BLOCK_CIPHER is defined (see below) the following symbols/helpers
  * can be used to define its capabilities:
@@ -214,20 +210,20 @@
  * - MBEDTLS_BLOCK_CIPHER_xxx_VIA_LEGACY: xxx key type is supported through
  *   a legacy module (i.e. MBEDTLS_xxx_C)
  */
-#if defined(MBEDTLS_PSA_CRYPTO_C)
-#if defined(MBEDTLS_PSA_ACCEL_KEY_TYPE_AES)
+#if defined(MBEDTLS_PSA_CRYPTO_CLIENT)
+#if defined(PSA_WANT_KEY_TYPE_AES)
 #define MBEDTLS_BLOCK_CIPHER_AES_VIA_PSA
 #define MBEDTLS_BLOCK_CIPHER_SOME_PSA
 #endif
-#if defined(MBEDTLS_PSA_ACCEL_KEY_TYPE_ARIA)
+#if defined(PSA_WANT_KEY_TYPE_ARIA)
 #define MBEDTLS_BLOCK_CIPHER_ARIA_VIA_PSA
 #define MBEDTLS_BLOCK_CIPHER_SOME_PSA
 #endif
-#if defined(MBEDTLS_PSA_ACCEL_KEY_TYPE_CAMELLIA)
+#if defined(PSA_WANT_KEY_TYPE_CAMELLIA)
 #define MBEDTLS_BLOCK_CIPHER_CAMELLIA_VIA_PSA
 #define MBEDTLS_BLOCK_CIPHER_SOME_PSA
 #endif
-#endif /* MBEDTLS_PSA_CRYPTO_C */
+#endif /* MBEDTLS_PSA_CRYPTO_CLIENT */
 
 #if defined(MBEDTLS_AES_C)
 #define MBEDTLS_BLOCK_CIPHER_AES_VIA_LEGACY
