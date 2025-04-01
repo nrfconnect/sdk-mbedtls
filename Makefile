@@ -14,6 +14,10 @@ no_test: programs
 programs: lib mbedtls_test
 	$(MAKE) -C programs
 
+ssl-opt: lib mbedtls_test
+	$(MAKE) -C programs ssl-opt
+	$(MAKE) -C tests ssl-opt
+
 lib:
 	$(MAKE) -C library
 
@@ -23,11 +27,14 @@ tests: lib mbedtls_test
 mbedtls_test:
 	$(MAKE) -C tests mbedtls_test
 
-library/%:
+.PHONY: FORCE
+FORCE:
+
+library/%: FORCE
 	$(MAKE) -C library $*
-programs/%:
+programs/%: FORCE
 	$(MAKE) -C programs $*
-tests/%:
+tests/%: FORCE
 	$(MAKE) -C tests $*
 
 .PHONY: generated_files
@@ -68,6 +75,8 @@ visualc_files: $(VISUALC_FILES)
 # present before it runs. It doesn't matter if the files aren't up-to-date,
 # they just need to be present.
 $(VISUALC_FILES): | library/generated_files
+$(VISUALC_FILES): | programs/generated_files
+$(VISUALC_FILES): | tests/generated_files
 $(VISUALC_FILES): $(gen_file_dep) scripts/generate_visualc_files.pl
 $(VISUALC_FILES): $(gen_file_dep) scripts/data_files/vs2017-app-template.vcxproj
 $(VISUALC_FILES): $(gen_file_dep) scripts/data_files/vs2017-main-template.vcxproj
@@ -184,8 +193,8 @@ C_SOURCE_FILES = $(wildcard \
 	include/*/*.h \
 	library/*.[hc] \
 	programs/*/*.[hc] \
-	tests/include/*/*.h tests/include/*/*/*.h \
-	tests/src/*.c tests/src/*/*.c \
+	framework/tests/include/*/*.h framework/tests/include/*/*/*.h \
+	framework/tests/src/*.c framework/tests/src/*/*.c \
 	tests/suites/*.function \
 )
 # Exuberant-ctags invocation. Other ctags implementations may require different options.
@@ -199,5 +208,5 @@ GPATH GRTAGS GSYMS GTAGS: $(C_SOURCE_FILES)
 	ls $(C_SOURCE_FILES) | gtags -f - --gtagsconf .globalrc
 cscope: cscope.in.out cscope.po.out cscope.out
 cscope.in.out cscope.po.out cscope.out: $(C_SOURCE_FILES)
-	cscope -bq -u -Iinclude -Ilibrary $(patsubst %,-I%,$(wildcard 3rdparty/*/include)) -Itests/include $(C_SOURCE_FILES)
+	cscope -bq -u -Iinclude -Ilibrary $(patsubst %,-I%,$(wildcard 3rdparty/*/include)) -Iframework/tests/include $(C_SOURCE_FILES)
 .PHONY: cscope global
