@@ -701,9 +701,12 @@ class TFPSACryptoCodeParser(CodeParser):
         all_macros["public"] = self.parse_macros([
             "include/psa/*.h",
             "include/tf-psa-crypto/*.h",
+            "include/mbedtls/*.h",
             "drivers/builtin/include/mbedtls/*.h",
             "drivers/everest/include/everest/everest.h",
-            "drivers/everest/include/everest/x25519.h"
+            "drivers/everest/include/everest/x25519.h",
+            "drivers/everest/include/tf-psa-crypto/private/everest/everest.h",
+            "drivers/everest/include/tf-psa-crypto/private/everest/x25519.h"
         ])
         all_macros["internal"] = self.parse_macros([
             "core/*.h",
@@ -717,31 +720,40 @@ class TFPSACryptoCodeParser(CodeParser):
         enum_consts = self.parse_enum_consts([
             "include/psa/*.h",
             "include/tf-psa-crypto/*.h",
+            "include/mbedtls/*.h",
             "drivers/builtin/include/mbedtls/*.h",
             "core/*.h",
             "drivers/builtin/src/*.h",
             "core/*.c",
             "drivers/builtin/src/*.c",
             "drivers/everest/include/everest/everest.h",
-            "drivers/everest/include/everest/x25519.h"
+            "drivers/everest/include/everest/x25519.h",
+            "drivers/everest/include/tf-psa-crypto/private/everest/everest.h",
+            "drivers/everest/include/tf-psa-crypto/private/everest/x25519.h"
         ])
         identifiers, excluded_identifiers = self.parse_identifiers([
             "include/psa/*.h",
             "include/tf-psa-crypto/*.h",
-            "drivers/builtin/include/mbedtls/*.h",
-            "core/*.h",
-            "drivers/builtin/src/*.h",
-            "drivers/everest/include/everest/everest.h",
-            "drivers/everest/include/everest/x25519.h"
-        ], ["drivers/p256-m/p256-m/p256-m.h"])
-        mbed_psa_words = self.parse_mbed_psa_words([
-            "include/psa/*.h",
-            "include/tf-psa-crypto/*.h",
+            "include/mbedtls/*.h",
             "drivers/builtin/include/mbedtls/*.h",
             "core/*.h",
             "drivers/builtin/src/*.h",
             "drivers/everest/include/everest/everest.h",
             "drivers/everest/include/everest/x25519.h",
+            "drivers/everest/include/tf-psa-crypto/private/everest/everest.h",
+            "drivers/everest/include/tf-psa-crypto/private/everest/x25519.h"
+        ], ["drivers/p256-m/p256-m/p256-m.h"])
+        mbed_psa_words = self.parse_mbed_psa_words([
+            "include/psa/*.h",
+            "include/tf-psa-crypto/*.h",
+            "include/mbedtls/*.h",
+            "drivers/builtin/include/mbedtls/*.h",
+            "core/*.h",
+            "drivers/builtin/src/*.h",
+            "drivers/everest/include/everest/everest.h",
+            "drivers/everest/include/everest/x25519.h",
+            "drivers/everest/include/tf-psa-crypto/private/everest/everest.h",
+            "drivers/everest/include/tf-psa-crypto/private/everest/x25519.h",
             "core/*.c",
             "drivers/builtin/src/*.c",
             "drivers/everest/library/everest.c",
