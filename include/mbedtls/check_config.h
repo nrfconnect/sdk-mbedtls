@@ -690,15 +690,12 @@
 #error "MBEDTLS_PLATFORM_NV_SEED_WRITE_MACRO and MBEDTLS_PLATFORM_STD_NV_SEED_WRITE cannot be defined simultaneously"
 #endif
 
-/*
-# Commented out for Mbed TLS 3.6.0 integration with nrf_security and TF-M
 #if defined(MBEDTLS_PSA_CRYPTO_C) &&                                    \
     !( ( ( defined(MBEDTLS_CTR_DRBG_C) || defined(MBEDTLS_HMAC_DRBG_C) ) && \
          defined(MBEDTLS_ENTROPY_C) ) ||                                \
        defined(MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG) )
 #error "MBEDTLS_PSA_CRYPTO_C defined, but not all prerequisites (missing RNG)"
 #endif
-*/
 
 #if defined(MBEDTLS_PSA_CRYPTO_C) && defined(PSA_HAVE_SOFT_BLOCK_MODE) && \
     defined(PSA_HAVE_SOFT_BLOCK_CIPHER) && !defined(MBEDTLS_CIPHER_C)
@@ -1008,10 +1005,8 @@
 #endif
 #define MBEDTLS_THREADING_IMPL // undef at the end of this paragraph
 #endif
-#if 0
 #if defined(MBEDTLS_THREADING_C) && !defined(MBEDTLS_THREADING_IMPL)
 #error "MBEDTLS_THREADING_C defined, single threading implementation required"
-#endif
 #endif
 #undef MBEDTLS_THREADING_IMPL // temporary macro defined above
 
