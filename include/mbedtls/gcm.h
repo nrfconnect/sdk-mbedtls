@@ -44,8 +44,6 @@
 extern "C" {
 #endif
 
-#if defined(MBEDTLS_GCM_C)
-
 #if !defined(MBEDTLS_GCM_ALT)
 
 #if defined(MBEDTLS_GCM_LARGE_TABLE)
@@ -380,10 +378,10 @@ void mbedtls_gcm_free(mbedtls_gcm_context *ctx);
 int mbedtls_gcm_self_test(int verbose);
 
 #endif /* MBEDTLS_SELF_TEST */
-#endif /* MBEDTLS_GCM_C */
 
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif /* gcm.h */
