@@ -1908,7 +1908,7 @@ void mbedtls_ssl_conf_ca_cb(mbedtls_ssl_config *conf,
 #endif /* MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK */
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
 
-#if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION) && defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
 const unsigned char *mbedtls_ssl_get_hs_sni(mbedtls_ssl_context *ssl,
                                             size_t *name_len)
 {
@@ -1945,7 +1945,7 @@ void mbedtls_ssl_set_hs_authmode(mbedtls_ssl_context *ssl,
 {
     ssl->handshake->sni_authmode = authmode;
 }
-#endif /* MBEDTLS_SSL_SERVER_NAME_INDICATION && MBEDTLS_X509_CRT_PARSE_C */
+#endif /* MBEDTLS_SSL_SERVER_NAME_INDICATION */
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 void mbedtls_ssl_set_verify(mbedtls_ssl_context *ssl,
@@ -2769,7 +2769,7 @@ void mbedtls_ssl_conf_groups(mbedtls_ssl_config *conf,
     conf->group_list = group_list;
 }
 
-#if defined(MBEDTLS_X509_CRT_PARSE_C) || defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
 
 /* A magic value for `ssl->hostname` indicating that
  * mbedtls_ssl_set_hostname() has been called with `NULL`.
@@ -2857,7 +2857,7 @@ int mbedtls_ssl_set_hostname(mbedtls_ssl_context *ssl, const char *hostname)
 
     return 0;
 }
-#endif /* MBEDTLS_X509_CRT_PARSE_C ||  MBEDTLS_SSL_SERVER_NAME_INDICATION*/
+#endif /* MBEDTLS_X509_CRT_PARSE_C */
 
 #if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
 void mbedtls_ssl_conf_sni(mbedtls_ssl_config *conf,
@@ -5631,7 +5631,7 @@ void mbedtls_ssl_free(mbedtls_ssl_context *ssl)
         mbedtls_free(ssl->session);
     }
 
-#if defined(MBEDTLS_X509_CRT_PARSE_C) || defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
     mbedtls_ssl_free_hostname(ssl);
 #endif
 
@@ -6432,73 +6432,6 @@ const char *mbedtls_ssl_get_curve_name_from_tls_id(uint16_t tls_id)
     return NULL;
 }
 #endif
-
-#if defined(MBEDTLS_X509_CRT_PARSE_C) && !defined(MBEDTLS_SSL_HANDSHAKE_WITH_CERT_ENABLED)
-int mbedtls_ssl_check_cert_usage(const mbedtls_x509_crt *cert,
-                                 const mbedtls_ssl_ciphersuite_t *ciphersuite,
-                                 int cert_endpoint,
-                                 mbedtls_ssl_protocol_version tls_version,
-                                 uint32_t *flags)
-{
-    int ret = 0;
-    unsigned int usage = 0;
-    const char *ext_oid;
-    size_t ext_len;
-    (void)tls_version;
-
-    if (cert_endpoint == MBEDTLS_SSL_IS_SERVER) {
-        /* Server part of the key exchange */
-        switch (ciphersuite->key_exchange) {
-            case MBEDTLS_KEY_EXCHANGE_RSA:
-            case MBEDTLS_KEY_EXCHANGE_RSA_PSK:
-                usage = MBEDTLS_X509_KU_KEY_ENCIPHERMENT;
-                break;
-
-            case MBEDTLS_KEY_EXCHANGE_DHE_RSA:
-            case MBEDTLS_KEY_EXCHANGE_ECDHE_RSA:
-            case MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA:
-                usage = MBEDTLS_X509_KU_DIGITAL_SIGNATURE;
-                break;
-
-            case MBEDTLS_KEY_EXCHANGE_ECDH_RSA:
-            case MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA:
-                usage = MBEDTLS_X509_KU_KEY_AGREEMENT;
-                break;
-
-            /* Don't use default: we want warnings when adding new values */
-            case MBEDTLS_KEY_EXCHANGE_NONE:
-            case MBEDTLS_KEY_EXCHANGE_PSK:
-            case MBEDTLS_KEY_EXCHANGE_DHE_PSK:
-            case MBEDTLS_KEY_EXCHANGE_ECDHE_PSK:
-            case MBEDTLS_KEY_EXCHANGE_ECJPAKE:
-                usage = 0;
-        }
-    } else {
-        /* Client auth: we only implement rsa_sign and mbedtls_ecdsa_sign for now */
-        usage = MBEDTLS_X509_KU_DIGITAL_SIGNATURE;
-    }
-
-    if (mbedtls_x509_crt_check_key_usage(cert, usage) != 0) {
-        *flags |= MBEDTLS_X509_BADCERT_KEY_USAGE;
-        ret = -1;
-    }
-
-    if (cert_endpoint == MBEDTLS_SSL_IS_SERVER) {
-        ext_oid = MBEDTLS_OID_SERVER_AUTH;
-        ext_len = MBEDTLS_OID_SIZE(MBEDTLS_OID_SERVER_AUTH);
-    } else {
-        ext_oid = MBEDTLS_OID_CLIENT_AUTH;
-        ext_len = MBEDTLS_OID_SIZE(MBEDTLS_OID_CLIENT_AUTH);
-    }
-
-    if (mbedtls_x509_crt_check_extended_key_usage(cert, ext_oid, ext_len) != 0) {
-        *flags |= MBEDTLS_X509_BADCERT_EXT_KEY_USAGE;
-        ret = -1;
-    }
-
-    return ret;
-}
-#endif /* defined(MBEDTLS_X509_CRT_PARSE_C) && !defined(MBEDTLS_SSL_HANDSHAKE_WITH_CERT_ENABLED) */
 
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
 int mbedtls_ssl_get_handshake_transcript(mbedtls_ssl_context *ssl,
