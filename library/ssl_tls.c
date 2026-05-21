@@ -1769,6 +1769,10 @@ static psa_status_t mbedtls_ssl_set_hs_ecjpake_password_common(
                               PSA_PAKE_PRIMITIVE(PSA_PAKE_PRIMITIVE_TYPE_ECC,
                                                  PSA_ECC_FAMILY_SECP_R1,
                                                  256));
+    /* J-PAKE only supports unconfirmed keys; set this explicitly so that
+     * strict PSA Crypto implementations do not reject the cipher suite with
+     * PSA_ERROR_INVALID_ARGUMENT. */
+    psa_pake_cs_set_key_confirmation(&cipher_suite, PSA_PAKE_UNCONFIRMED_KEY);
 
     status = psa_pake_setup(&ssl->handshake->psa_pake_ctx, pwd, &cipher_suite);
     if (status != PSA_SUCCESS) {
