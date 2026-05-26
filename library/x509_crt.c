@@ -202,7 +202,13 @@ int mbedtls_x509_profile_check_pk_alg(const mbedtls_x509_crt_profile *profile,
 static int x509_profile_check_key(const mbedtls_x509_crt_profile *profile,
                                   const mbedtls_pk_context *pk)
 {
+
+#if defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC) || defined(PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY)
     const mbedtls_pk_type_t pk_alg = mbedtls_pk_get_type(pk);
+#else
+    (void) profile;
+    (void) pk;
+#endif
 
 #if defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC)
     if (pk_alg == MBEDTLS_PK_RSA || pk_alg == MBEDTLS_PK_RSASSA_PSS) {
