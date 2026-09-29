@@ -1,0 +1,8 @@
+Bugfix
+   * Fix the TLS 1.2 ECDHE premaster secret buffer being sized from the
+     built-in ECP module, which left it a single byte when every curve
+     comes from a driver or a separate PSA Crypto implementation and PSK
+     key exchanges are disabled. It is now sized from the curves PSA
+     Crypto is configured with, which also keeps mbedtls/ssl.h building
+     when psa/crypto_struct.h is replaced through
+     MBEDTLS_PSA_CRYPTO_STRUCT_FILE.

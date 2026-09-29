@@ -20,6 +20,7 @@
 #include "debug_internal.h"
 
 #include "psa/crypto.h"
+#include "mbedtls/private/cipher.h"
 #include "psa_util_internal.h" // for mbedtls_error_pair_t, psa_status_to_mbedtls
 extern const mbedtls_error_pair_t psa_to_ssl_errors[7];
 

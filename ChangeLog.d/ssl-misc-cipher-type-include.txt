@@ -1,0 +1,5 @@
+Bugfix
+   * Fix the build of the TLS library when MBEDTLS_PSA_CRYPTO_STRUCT_FILE
+     replaces psa/crypto_struct.h with a header that does not include the
+     driver context definitions, through which mbedtls/private/cipher.h
+     used to reach the TLS sources.
